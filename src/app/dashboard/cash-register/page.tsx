@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Wallet, LogIn, LogOut, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+export const dynamic = 'force-dynamic';
+
 export default async function CashRegisterPage() {
     const session = await auth();
     if (!session || !session.user.businessId) return null;

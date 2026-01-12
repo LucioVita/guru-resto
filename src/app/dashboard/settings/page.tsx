@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 
+export const dynamic = 'force-dynamic';
+
 export default async function SettingsPage() {
     const session = await auth();
     if (!session || !session.user.businessId) return null;

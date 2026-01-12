@@ -9,6 +9,8 @@ import { Plus } from "lucide-react";
 import ProductFormDialog from "@/components/products/product-form-dialog";
 import AvailabilityToggle from "@/components/products/availability-toggle";
 
+export const dynamic = 'force-dynamic';
+
 export default async function ProductsPage() {
     const session = await auth();
     if (!session || !session.user.businessId) return null;

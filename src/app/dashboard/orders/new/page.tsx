@@ -4,6 +4,8 @@ import { products } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import OrderForm from "@/components/orders/order-form";
 
+export const dynamic = 'force-dynamic';
+
 export default async function NewOrderPage() {
     const session = await auth();
     if (!session || !session.user.businessId) return null;
