@@ -29,10 +29,3 @@ export const db = new Proxy({} as MySql2Database<typeof schema>, {
     };
   }
 });
-```
-
-Guardá y subí a GitHub:
-```
-git add src/db/index.ts
-git commit -m "Use proxy for lazy db connection"
-git push origin main
