@@ -10,7 +10,7 @@ let connection: any = null;
 
 async function getConnection() {
   if (!connection) {
-    connection = await mysql.createConnection(process.env.DATABASE_URL);
+   connection = await mysql.createConnection(process.env.DATABASE_URL!);
   }
   return connection;
 }
