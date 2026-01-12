@@ -10,10 +10,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-```
-
-Guardá (`Ctrl + O`, `Enter`, `Ctrl + X`).
-
-Ahora también necesitamos configurar tus páginas del dashboard. Escribí:
-```
-find src -name "page.tsx" | grep dashboard
