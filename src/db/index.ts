@@ -6,6 +6,16 @@ if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL is missing");
 }
 
-const connection = await mysql.createConnection(process.env.DATABASE_URL);
+let connection: mysql.Connection | null = null;
 
-export const db = drizzle(connection, { schema, mode: "default" });
+async function getConnection() {
+  if (!connection) {
+    connection = await mysql.createConnection(process.env.DATABASE_URL!);
+  }
+  return connection;
+}
+
+export async function getDb() {
+  const conn = await getConnection();
+  return drizzle(conn, { schema, mode: "default" });
+}
