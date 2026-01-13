@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { db } from "@/db";
 import { businesses } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { updateBusinessAction } from "@/actions/business-actions";
+import { updateAfipSettingsAction } from "@/actions/business-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +24,7 @@ export default async function SettingsPage() {
         <div className="max-w-4xl mx-auto py-8">
             <h1 className="text-3xl font-bold mb-8">Settings</h1>
 
-            <form action={updateBusinessAction}>
+            <form action={updateAfipSettingsAction}>
                 <div className="grid gap-8">
                     <Card>
                         <CardHeader>
