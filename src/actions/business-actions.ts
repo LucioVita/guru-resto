@@ -6,39 +6,29 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 
-export async function updateBusinessAction(formData: FormData) {
+export async function updateAfipSettingsAction(data: {
+    afipCuit: string;
+    afipToken: string;
+    afipEnvironment: 'dev' | 'prod';
+    afipPuntoVenta: number;
+    afipCertificate?: string;
+    afipPrivateKey?: string;
+}) {
     const session = await auth();
-    if (!session || !session.user.businessId) {
-        throw new Error("Unauthorized");
-    }
-
-    const name = formData.get("name") as string;
-    const webhookUrl = formData.get("webhookUrl") as string;
-    const webhookStatusUrl = formData.get("webhookStatusUrl") as string;
-    const apiKey = formData.get("apiKey") as string;
-
-    const afipCuit = formData.get("afipCuit") as string;
-    const afipToken = formData.get("afipToken") as string;
-    const afipEnvironment = formData.get("afipEnvironment") as "dev" | "prod";
-    const afipPuntoVenta = parseInt(formData.get("afipPuntoVenta") as string) || 1;
-    const afipCertificate = formData.get("afipCertificate") as string;
-    const afipPrivateKey = formData.get("afipPrivateKey") as string;
+    if (!session || !session.user.businessId) throw new Error("Unauthorized");
 
     await db.update(businesses)
         .set({
-            name,
-            webhookUrl,
-            webhookStatusUrl,
-            apiKey,
-            afipCuit,
-            afipToken,
-            afipEnvironment,
-            afipPuntoVenta,
-            afipCertificate,
-            afipPrivateKey,
+            afipCuit: data.afipCuit,
+            afipToken: data.afipToken,
+            afipEnvironment: data.afipEnvironment,
+            afipPuntoVenta: data.afipPuntoVenta,
+            afipCertificate: data.afipCertificate || null,
+            afipPrivateKey: data.afipPrivateKey || null,
             updatedAt: new Date(),
         })
         .where(eq(businesses.id, session.user.businessId));
 
-    revalidatePath("/dashboard/settings");
+    revalidatePath("/dashboard/settings/afip");
+    return { success: true };
 }

@@ -64,13 +64,27 @@ export async function createOrderInvoiceAction(orderId: string) {
             })
             .where(eq(orders.id, orderId));
 
+        const updatedOrder = await db.query.orders.findFirst({
+            where: eq(orders.id, orderId),
+            with: {
+                business: true,
+                customer: true,
+                items: {
+                    with: {
+                        product: true
+                    }
+                }
+            }
+        });
+
         revalidatePath("/dashboard");
-        return { success: true, invoiceNumber: invoiceData.invoiceNumber };
+        return { success: true, order: updatedOrder };
     } catch (error: any) {
         console.error("AFIP Error:", error);
         throw new Error(error.message || "Failed to generate AFIP invoice");
     }
 }
+
 
 export async function createOrderAction(data: {
     customerId: string | null;

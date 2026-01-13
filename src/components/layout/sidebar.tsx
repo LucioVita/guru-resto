@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import { LayoutDashboard, ShoppingCart, Users, Package, Settings, Calculator } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Users, Package, Settings, Calculator, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
@@ -10,6 +10,7 @@ const items = [
     { href: "/dashboard/orders/new", icon: ShoppingCart, label: "Tomar Pedido" },
     { href: "/dashboard/products", icon: Package, label: "Productos" },
     { href: "/dashboard/customers", icon: Users, label: "Clientes" },
+    { href: "/dashboard/settings/afip", icon: FileText, label: "Facturación" },
     { href: "/dashboard/cash-register", icon: Calculator, label: "Caja" },
     { href: "/dashboard/settings", icon: Settings, label: "Ajustes" },
 ];
