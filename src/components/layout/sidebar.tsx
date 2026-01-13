@@ -19,7 +19,7 @@ export default function Sidebar({ role }: { role: string }) {
     const pathname = usePathname();
 
     return (
-        <aside className="hidden w-72 flex-col border-r bg-card md:flex">
+        <aside className="hidden w-60 flex-col border-r bg-card md:flex">
             <div className="flex h-16 items-center border-b px-8">
                 <span className="text-2xl font-black tracking-tighter text-primary italic">GURU RESTO</span>
             </div>
@@ -43,6 +43,20 @@ export default function Sidebar({ role }: { role: string }) {
                     );
                 })}
             </nav>
+            <div className="p-6 border-t">
+                <a
+                    href="https://www.guruweb.com.ar"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block hover:opacity-80 transition-opacity"
+                >
+                    <img
+                        src="/guruweb-logo.png"
+                        alt="GuruWeb Logo"
+                        className="h-10 w-auto"
+                    />
+                </a>
+            </div>
         </aside>
     );
 }
