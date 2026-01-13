@@ -11,7 +11,21 @@ export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
     const session = await auth();
-    if (!session || !session.user.businessId) return null;
+
+    if (!session) return null;
+
+    if (!session.user.businessId) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[70vh] text-center space-y-4">
+                <div className="bg-amber-50 p-6 rounded-2xl border border-amber-200 max-w-md">
+                    <h2 className="text-xl font-bold text-amber-800 mb-2">Configuración Requerida</h2>
+                    <p className="text-amber-700 text-sm">
+                        Tu usuario no tiene un negocio asignado todavía. Por favor, contacta al administrador o configura tu negocio en los ajustes.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     // Only fetch orders that are in active states for the Kanban board
     const activeOrders = await db.query.orders.findMany({

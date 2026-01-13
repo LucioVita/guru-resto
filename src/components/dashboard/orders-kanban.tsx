@@ -9,6 +9,9 @@ import { KanbanCard } from "@/components/dashboard/kanban-card";
 import { updateOrderStatusAction } from "@/actions/order-actions";
 import { toast } from "sonner";
 import { InvoiceDialog } from "@/components/orders/invoice-dialog";
+import { ShoppingCart } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 const STAGES = [
     { id: "pending", title: "Pendiente", color: "border-amber-500" },
@@ -98,50 +101,67 @@ export default function OrdersKanban({ initialOrders }: { initialOrders: any[] }
 
     return (
         <div className="flex flex-col h-full space-y-4">
-            <DndContext
-                sensors={sensors}
-                collisionDetection={closestCorners}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-            >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full min-h-[600px]">
-                    <KanbanColumn
-                        id="pending"
-                        title="Pendiente"
-                        orders={pendingOrders}
-                        count={pendingOrders.length}
-                        color="bg-amber-50/50 border-amber-200"
-                        onStatusChange={handleStatusChange}
-                    />
-                    <KanbanColumn
-                        id="preparation"
-                        title="En Preparación"
-                        orders={preparationOrders}
-                        count={preparationOrders.length}
-                        color="bg-blue-50/50 border-blue-200"
-                        onStatusChange={handleStatusChange}
-                    />
-                    <KanbanColumn
-                        id="ready"
-                        title="Listos para Entregar"
-                        orders={readyOrders}
-                        count={readyOrders.length}
-                        color="bg-green-50/50 border-green-200"
-                        onStatusChange={handleStatusChange}
-                    />
+            {orders.length === 0 ? (
+                <div className="flex flex-col items-center justify-center min-h-[500px] bg-gray-50/50 rounded-3xl border-2 border-dashed border-gray-200 p-12 text-center">
+                    <div className="bg-white p-4 rounded-full shadow-sm mb-4">
+                        <ShoppingCart className="h-10 w-10 text-gray-300" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-700">No hay pedidos activos</h3>
+                    <p className="text-gray-500 max-w-sm mt-1 mb-8">
+                        Cuando tomes un nuevo pedido, aparecerá aquí en el tablero para que puedas gestionarlo.
+                    </p>
+                    <Link href="/dashboard/orders/new">
+                        <Button className="font-bold px-8 shadow-xl shadow-primary/20">
+                            Tomar mi primer pedido
+                        </Button>
+                    </Link>
                 </div>
+            ) : (
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCorners}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                >
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full min-h-[600px]">
+                        <KanbanColumn
+                            id="pending"
+                            title="Pendiente"
+                            orders={pendingOrders}
+                            count={pendingOrders.length}
+                            color="bg-amber-50/50 border-amber-200"
+                            onStatusChange={handleStatusChange}
+                        />
+                        <KanbanColumn
+                            id="preparation"
+                            title="En Preparación"
+                            orders={preparationOrders}
+                            count={preparationOrders.length}
+                            color="bg-blue-50/50 border-blue-200"
+                            onStatusChange={handleStatusChange}
+                        />
+                        <KanbanColumn
+                            id="ready"
+                            title="Listos para Entregar"
+                            orders={readyOrders}
+                            count={readyOrders.length}
+                            color="bg-green-50/50 border-green-200"
+                            onStatusChange={handleStatusChange}
+                        />
+                    </div>
 
-                <DragOverlay>
-                    {activeId ? (
-                        <div className="rotate-3 scale-105 transition-transform">
-                            <KanbanCard
-                                order={orders.find((o) => o.id === activeId)}
-                                isOverlay
-                            />
-                        </div>
-                    ) : null}
-                </DragOverlay>
-            </DndContext>
+                    <DragOverlay>
+                        {activeId ? (
+                            <div className="rotate-3 scale-105 transition-transform">
+                                <KanbanCard
+                                    order={orders.find((o) => o.id === activeId)}
+                                    isOverlay
+                                />
+                            </div>
+                        ) : null}
+                    </DragOverlay>
+                </DndContext>
+            )}
 
             <InvoiceDialog
                 order={invoiceOrder}
@@ -151,4 +171,5 @@ export default function OrdersKanban({ initialOrders }: { initialOrders: any[] }
         </div>
     );
 }
+
 
