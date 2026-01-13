@@ -19,14 +19,7 @@ export function AfipSettingsForm({ initialData }: { initialData: any }) {
         const formData = new FormData(e.currentTarget);
 
         try {
-            await updateAfipSettingsAction({
-                afipCuit: formData.get("afipCuit") as string,
-                afipToken: formData.get("afipToken") as string,
-                afipEnvironment: formData.get("afipEnvironment") as 'dev' | 'prod',
-                afipPuntoVenta: parseInt(formData.get("afipPuntoVenta") as string),
-                afipCertificate: formData.get("afipCertificate") as string,
-                afipPrivateKey: formData.get("afipPrivateKey") as string,
-            });
+            await updateAfipSettingsAction(formData);
             toast.success("Configuración guardada correctamente");
         } catch (error: any) {
             toast.error(error.message || "Error al guardar la configuración");
