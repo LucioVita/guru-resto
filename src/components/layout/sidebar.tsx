@@ -1,3 +1,5 @@
+'use client';
+
 import Link from "next/link";
 import { LayoutDashboard, ShoppingCart, Users, Package, Settings, Calculator } from "lucide-react";
 import { cn } from "@/lib/utils";
