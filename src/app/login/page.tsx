@@ -11,7 +11,7 @@ export default function LoginPage() {
     const [errorMessage, formAction, isPending] = useActionState(authenticate, undefined);
 
     return (
-        <div className="flex h-screen items-center justify-center bg-gray-100">
+        <div className="flex h-screen items-center justify-center bg-background">
             <Card className="w-full max-w-sm">
                 <CardHeader>
                     <CardTitle className="text-2xl text-center">Guru-Resto Login</CardTitle>
