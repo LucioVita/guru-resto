@@ -4,11 +4,14 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { Clock, Printer, FileText } from "lucide-react";
+import { Clock, Printer, FileText, ChevronRight, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePrint } from "@/hooks/use-print";
 
-export function KanbanCard({ order, isOverlay }: { order: any; isOverlay?: boolean }) {
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CheckCircle2 } from "lucide-react";
+
+export function KanbanCard({ order, isOverlay, onStatusChange }: { order: any; isOverlay?: boolean; onStatusChange?: (id: string, status: string) => void }) {
     const { printOrder } = usePrint();
     const {
         attributes,
@@ -24,6 +27,33 @@ export function KanbanCard({ order, isOverlay }: { order: any; isOverlay?: boole
         transition,
     };
 
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'pending': return 'border-l-amber-500';
+            case 'preparation': return 'border-l-blue-500';
+            case 'ready': return 'border-l-green-500';
+            default: return 'border-l-gray-300';
+        }
+    };
+
+    const getStatusBadge = (status: string) => {
+        switch (status) {
+            case 'pending': return 'bg-amber-100 text-amber-700';
+            case 'preparation': return 'bg-blue-100 text-blue-700';
+            case 'ready': return 'bg-green-100 text-green-700';
+            default: return 'bg-gray-100 text-gray-700';
+        }
+    };
+
+    const getStatusText = (status: string) => {
+        switch (status) {
+            case 'pending': return 'Pendiente';
+            case 'preparation': return 'En Cocina';
+            case 'ready': return 'Listo';
+            default: return status;
+        }
+    };
+
     return (
         <Card
             ref={setNodeRef}
@@ -31,58 +61,92 @@ export function KanbanCard({ order, isOverlay }: { order: any; isOverlay?: boole
             {...attributes}
             {...listeners}
             className={cn(
-                "cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow",
-                isDragging && "opacity-50",
-                isOverlay && "shadow-xl border-primary"
+                "group relative border-l-4 overflow-hidden transition-all duration-200 hover:shadow-lg active:scale-[0.98]",
+                getStatusColor(order.status),
+                isDragging && "opacity-20",
+                isOverlay && "shadow-2xl border-primary ring-2 ring-primary/20",
+                "bg-white"
             )}
         >
-            <CardContent className="p-4 space-y-3">
-                <div className="flex justify-between items-start">
-                    <span className="font-bold text-sm">Order #{order.id.slice(-4)}</span>
-                    <div className="flex items-center gap-1 text-[10px] text-gray-400">
-                        <Clock className="h-3 w-3" />
-                        {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            <CardContent className="p-3 space-y-3">
+                <div className="flex justify-between items-start" onPointerDown={(e) => e.stopPropagation()}>
+                    <div className="flex flex-col">
+                        <span className="font-black text-lg tracking-tighter text-gray-900">#{order.id.slice(-4)}</span>
+                        <div className="mt-1">
+                            <Select
+                                value={order.status}
+                                onValueChange={(val) => onStatusChange?.(order.id, val)}
+                            >
+                                <SelectTrigger className={cn("h-6 border-none px-1.5 text-[10px] font-bold uppercase w-fit bg-transparent hover:bg-black/5", getStatusBadge(order.status))}>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="pending">Pendiente</SelectItem>
+                                    <SelectItem value="preparation">En Cocina</SelectItem>
+                                    <SelectItem value="ready">Listo</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center gap-1 text-[11px] font-medium text-gray-400">
+                            <Clock className="h-3 w-3" />
+                            {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        <div className="text-sm font-bold text-gray-900">${order.total}</div>
                     </div>
                 </div>
 
-                <div>
-                    <p className="text-xs font-medium text-gray-600">
-                        {order.customer?.name || "Anonymous Customer"}
+                <div className="space-y-1">
+                    <p className="text-xs font-bold text-gray-700 truncate">
+                        {order.customer?.name || "Cliente Final"}
                     </p>
-                    <div className="flex flex-wrap gap-1 mt-2">
+                    <div className="flex flex-col gap-1 mt-2">
                         {order.items?.map((item: any) => (
-                            <span key={item.id} className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded border">
-                                {item.quantity}x {item.product?.name}
-                            </span>
+                            <div key={item.id} className="flex justify-between items-center text-[11px] text-gray-600 bg-gray-50/50 p-1 rounded border border-gray-100">
+                                <span className="font-medium">
+                                    <span className="text-primary font-bold">{item.quantity}x</span> {item.product?.name}
+                                </span>
+                            </div>
                         ))}
                     </div>
                 </div>
 
-                <div className="flex justify-between items-center pt-2 border-t">
-                    <div className="flex gap-2">
+                <div className="flex justify-between items-center pt-2 border-t border-gray-100" onPointerDown={(e) => e.stopPropagation()}>
+                    <div className="flex gap-1">
                         <Button
-                            variant="ghost"
+                            variant="secondary"
                             size="icon"
-                            className="h-7 w-7 text-gray-400 hover:text-primary"
+                            className="h-8 w-8 text-gray-600 hover:bg-primary hover:text-white transition-colors"
                             onClick={(e) => { e.stopPropagation(); printOrder(order, 'comanda'); }}
-                            title="Print Comanda"
                         >
-                            <FileText className="h-3.5 w-3.5" />
+                            <FileText className="h-4 w-4" />
                         </Button>
                         <Button
-                            variant="ghost"
+                            variant="secondary"
                             size="icon"
-                            className="h-7 w-7 text-gray-400 hover:text-primary"
+                            className="h-8 w-8 text-gray-600 hover:bg-primary hover:text-white transition-colors"
                             onClick={(e) => { e.stopPropagation(); printOrder(order, 'ticket'); }}
-                            title="Print Ticket"
                         >
-                            <Printer className="h-3.5 w-3.5" />
+                            <Printer className="h-4 w-4" />
                         </Button>
                     </div>
-                    <div className="text-right">
-                        <div className="text-xs font-bold text-primary">${order.total}</div>
-                        <div className="text-[10px] capitalize text-gray-500">{order.paymentMethod}</div>
-                    </div>
+
+                    {order.status === 'ready' ? (
+                        <Button
+                            size="sm"
+                            className="h-8 gap-1.5 text-[11px] font-bold bg-green-600 hover:bg-green-700 text-white shadow-md shadow-green-200"
+                            onClick={(e) => { e.stopPropagation(); onStatusChange?.(order.id, 'delivered'); }}
+                        >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            ENTREGAR
+                        </Button>
+                    ) : (
+                        <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                            {order.paymentMethod === 'cash' ? 'Efectivo' : order.paymentMethod}
+                            <ChevronRight className="h-3 w-3" />
+                        </div>
+                    )}
                 </div>
             </CardContent>
         </Card>
