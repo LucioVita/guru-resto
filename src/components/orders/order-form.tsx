@@ -16,9 +16,12 @@ export default function OrderForm({ products }: { products: any[] }) {
     const [cart, setCart] = useState<{ productId: string; quantity: number; name: string; price: string }[]>([]);
     const [loading, setLoading] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState("cash");
+    const [customerName, setCustomerName] = useState("");
+    const [customerAddress, setCustomerAddress] = useState("");
+    const [customerPhone, setCustomerPhone] = useState("");
 
     const total = useMemo(() => {
-        return cart.reduce((acc, item) => acc + (parseFloat(item.price) * item.quantity), 0).toFixed(2);
+        return cart.reduce((acc, item) => acc + (parseFloat(item.price) * item.quantity), 0);
     }, [cart]);
 
     const addToCart = (product: any) => {
@@ -47,22 +50,22 @@ export default function OrderForm({ products }: { products: any[] }) {
 
     const handleSubmit = async () => {
         if (cart.length === 0) {
-            toast.error("Cart is empty");
+            toast.error("El carrito está vacío");
             return;
         }
 
         setLoading(true);
         try {
             await createOrderAction({
-                customerId: null, // Placeholder for now
+                customerId: null,
                 items: cart,
-                total,
+                total: total.toFixed(2),
                 paymentMethod,
             });
-            toast.success("Order created successfully");
+            toast.success("Pedido creado exitosamente");
             router.push("/dashboard");
         } catch (error) {
-            toast.error("Failed to create order");
+            toast.error("Error al crear el pedido");
         } finally {
             setLoading(false);
         }
@@ -73,7 +76,7 @@ export default function OrderForm({ products }: { products: any[] }) {
             <div className="md:col-span-2 space-y-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Select Products</CardTitle>
+                        <CardTitle>Seleccionar Productos</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -86,8 +89,8 @@ export default function OrderForm({ products }: { products: any[] }) {
                                     disabled={!product.isAvailable}
                                 >
                                     <span className="font-bold">{product.name}</span>
-                                    <span className="text-xs text-gray-500">${product.price}</span>
-                                    {!product.isAvailable && <span className="text-[10px] text-red-500 uppercase">Unavailable</span>}
+                                    <span className="text-sm text-gray-600 font-semibold">${Math.round(parseFloat(product.price))}</span>
+                                    {!product.isAvailable && <span className="text-[10px] text-red-500 uppercase">No disponible</span>}
                                 </Button>
                             ))}
                         </div>
@@ -98,15 +101,48 @@ export default function OrderForm({ products }: { products: any[] }) {
             <div className="space-y-6">
                 <Card className="sticky top-6">
                     <CardHeader>
-                        <CardTitle>Current Order</CardTitle>
+                        <CardTitle>Pedido Actual</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
+                        {/* Customer Information */}
+                        <div className="space-y-3 pb-4 border-b">
+                            <h3 className="font-semibold text-sm">Datos del Cliente</h3>
+                            <div className="space-y-2">
+                                <Label htmlFor="customerName">Nombre</Label>
+                                <Input
+                                    id="customerName"
+                                    value={customerName}
+                                    onChange={(e) => setCustomerName(e.target.value)}
+                                    placeholder="Nombre del cliente"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="customerPhone">Teléfono</Label>
+                                <Input
+                                    id="customerPhone"
+                                    value={customerPhone}
+                                    onChange={(e) => setCustomerPhone(e.target.value)}
+                                    placeholder="Teléfono de contacto"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="customerAddress">Dirección</Label>
+                                <Input
+                                    id="customerAddress"
+                                    value={customerAddress}
+                                    onChange={(e) => setCustomerAddress(e.target.value)}
+                                    placeholder="Dirección de entrega"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Cart Items */}
                         <div className="space-y-4">
                             {cart.map((item) => (
                                 <div key={item.productId} className="flex items-center justify-between text-sm">
                                     <div className="flex-1">
                                         <p className="font-medium">{item.name}</p>
-                                        <p className="text-xs text-gray-500">${item.price}</p>
+                                        <p className="text-sm text-gray-600 font-semibold">${Math.round(parseFloat(item.price))}</p>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <div className="flex items-center border rounded-md">
@@ -125,32 +161,32 @@ export default function OrderForm({ products }: { products: any[] }) {
                                 </div>
                             ))}
                             {cart.length === 0 && (
-                                <p className="text-center py-8 text-gray-500 text-sm">Cart is empty</p>
+                                <p className="text-center py-8 text-gray-500 text-sm">El carrito está vacío</p>
                             )}
                         </div>
 
                         <div className="border-t pt-4 space-y-4">
                             <div className="space-y-2">
-                                <Label>Payment Method</Label>
+                                <Label>Método de Pago</Label>
                                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                                     <SelectTrigger>
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="cash">Cash</SelectItem>
-                                        <SelectItem value="transfer">Transfer</SelectItem>
-                                        <SelectItem value="card">Card</SelectItem>
+                                        <SelectItem value="cash">Efectivo</SelectItem>
+                                        <SelectItem value="transfer">Transferencia</SelectItem>
+                                        <SelectItem value="card">Tarjeta</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
 
                             <div className="flex justify-between items-end font-bold text-xl pt-4">
                                 <span>Total</span>
-                                <span>${total}</span>
+                                <span>${Math.round(total)}</span>
                             </div>
 
                             <Button className="w-full h-12 text-lg" disabled={loading || cart.length === 0} onClick={handleSubmit}>
-                                {loading ? "Placing Order..." : "Confirm Order"}
+                                {loading ? "Procesando..." : "Confirmar Pedido"}
                             </Button>
                         </div>
                     </CardContent>

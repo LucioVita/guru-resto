@@ -12,11 +12,19 @@ const items = [
     { href: "/dashboard/customers", icon: Users, label: "Clientes" },
     { href: "/dashboard/settings/afip", icon: FileText, label: "Facturación" },
     { href: "/dashboard/cash-register", icon: Calculator, label: "Caja" },
-    { href: "/dashboard/settings", icon: Settings, label: "Ajustes" },
+    { href: "/dashboard/settings", icon: Settings, label: "Ajustes", restrictedTo: ["super_admin"] },
 ];
 
 export default function Sidebar({ role }: { role: string }) {
     const pathname = usePathname();
+
+    // Filter items based on user role
+    const visibleItems = items.filter(item => {
+        if (item.restrictedTo) {
+            return item.restrictedTo.includes(role);
+        }
+        return true;
+    });
 
     return (
         <aside className="hidden w-60 flex-col border-r bg-card md:flex">
@@ -24,7 +32,7 @@ export default function Sidebar({ role }: { role: string }) {
                 <span className="text-2xl font-black tracking-tighter text-primary italic">GURU RESTO</span>
             </div>
             <nav className="flex-1 space-y-1.5 p-6">
-                {items.map((item) => {
+                {visibleItems.map((item) => {
                     const isActive = pathname === item.href;
                     return (
                         <Link

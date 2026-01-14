@@ -23,11 +23,11 @@ export default async function ProductsPage() {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold">Products</h1>
+                <h1 className="text-3xl font-bold">Productos</h1>
                 <ProductFormDialog>
                     <Button className="gap-2">
                         <Plus className="h-4 w-4" />
-                        Add Product
+                        Agregar Producto
                     </Button>
                 </ProductFormDialog>
             </div>
@@ -36,37 +36,37 @@ export default async function ProductsPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Category</TableHead>
-                            <TableHead>Price</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead className="text-gray-700 font-semibold">Nombre</TableHead>
+                            <TableHead className="text-gray-700 font-semibold">Categoría</TableHead>
+                            <TableHead className="text-gray-700 font-semibold">Precio</TableHead>
+                            <TableHead className="text-gray-700 font-semibold">Estado</TableHead>
+                            <TableHead className="text-right text-gray-700 font-semibold">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {productList.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={5} className="h-24 text-center text-gray-500">
-                                    No products found. Add your first product to get started.
+                                    No se encontraron productos. Agrega tu primer producto para comenzar.
                                 </TableCell>
                             </TableRow>
                         ) : (
                             productList.map((product) => (
                                 <TableRow key={product.id}>
-                                    <TableCell className="font-medium">
+                                    <TableCell className="font-medium text-gray-900">
                                         <div>{product.name}</div>
-                                        <div className="text-xs text-gray-500 truncate max-w-[200px]">{product.description}</div>
+                                        <div className="text-xs text-gray-600 truncate max-w-[200px]">{product.description}</div>
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant="secondary">{product.category}</Badge>
                                     </TableCell>
-                                    <TableCell>${product.price}</TableCell>
+                                    <TableCell className="text-gray-900 font-semibold">${Math.round(parseFloat(product.price))}</TableCell>
                                     <TableCell>
                                         <AvailabilityToggle id={product.id} isAvailable={product.isAvailable} />
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <ProductFormDialog product={product}>
-                                            <Button variant="ghost" size="sm">Edit</Button>
+                                            <Button variant="ghost" size="sm">Editar</Button>
                                         </ProductFormDialog>
                                     </TableCell>
                                 </TableRow>

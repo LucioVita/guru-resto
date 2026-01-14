@@ -42,39 +42,39 @@ export default function ProductFormDialog({ children, product }: { children: Rea
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{product ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+                    <DialogTitle>{product ? 'Editar Producto' : 'Agregar Nuevo Producto'}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 py-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Name</Label>
+                        <Label htmlFor="name">Nombre</Label>
                         <Input id="name" name="name" defaultValue={product?.name} required />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="category">Category</Label>
+                        <Label htmlFor="category">Categoría</Label>
                         <Select name="category" defaultValue={product?.category || "Principal"}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Select a category" />
+                                <SelectValue placeholder="Seleccionar categoría" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="Principal">Principal</SelectItem>
-                                <SelectItem value="Guarnicion">Guarnicion</SelectItem>
+                                <SelectItem value="Guarnicion">Guarnición</SelectItem>
                                 <SelectItem value="Bebida">Bebida</SelectItem>
                                 <SelectItem value="Postre">Postre</SelectItem>
-                                <SelectItem value="Other">Other</SelectItem>
+                                <SelectItem value="Other">Otro</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="price">Price</Label>
-                        <Input id="price" name="price" type="number" step="0.01" defaultValue={product?.price} required />
+                        <Label htmlFor="price">Precio</Label>
+                        <Input id="price" name="price" type="number" step="1" defaultValue={product?.price ? Math.round(parseFloat(product.price)) : ''} required />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="description">Description (Ingredients)</Label>
-                        <Textarea id="description" name="description" defaultValue={product?.description} placeholder="Enter ingredients or product details..." />
+                        <Label htmlFor="description">Descripción (Ingredientes)</Label>
+                        <Textarea id="description" name="description" defaultValue={product?.description} placeholder="Ingresa ingredientes o detalles del producto..." />
                     </div>
                     <DialogFooter>
                         <Button type="submit" disabled={loading}>
-                            {loading ? 'Saving...' : 'Save Product'}
+                            {loading ? 'Guardando...' : 'Guardar Producto'}
                         </Button>
                     </DialogFooter>
                 </form>
