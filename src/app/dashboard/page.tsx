@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { orders } from "@/db/schema";
+import { orders, customers, orderItems, products } from "@/db/schema";
 import { eq, and, inArray, desc } from "drizzle-orm";
 import OrdersKanban from "@/components/dashboard/orders-kanban";
 import { Button } from "@/components/ui/button";
@@ -27,21 +27,52 @@ export default async function DashboardPage() {
         );
     }
 
-    // Fetch orders with relations
-    const activeOrders = await db.query.orders.findMany({
-        where: and(
-            eq(orders.businessId, session.user.businessId),
-            inArray(orders.status, ['pending', 'preparation', 'ready'])
-        ),
-        with: {
-            customer: true,
-            items: {
-                with: {
-                    product: true
-                }
-            }
-        },
-        orderBy: desc(orders.createdAt),
+    // Fetch orders and customers
+    // We use manual joins because db.query uses LATERAL JOINs which are not supported in some MariaDB versions
+    const orderRows = await db
+        .select({
+            order: orders,
+            customer: customers
+        })
+        .from(orders)
+        .leftJoin(customers, eq(orders.customerId, customers.id))
+        .where(
+            and(
+                eq(orders.businessId, session.user.businessId),
+                inArray(orders.status, ['pending', 'preparation', 'ready'])
+            )
+        )
+        .orderBy(desc(orders.createdAt));
+
+    const orderIds = orderRows.map((r) => r.order.id);
+
+    // Fetch items and products for these orders
+    let allItems: any[] = [];
+    if (orderIds.length > 0) {
+        allItems = await db
+            .select({
+                item: orderItems,
+                product: products
+            })
+            .from(orderItems)
+            .leftJoin(products, eq(orderItems.productId, products.id))
+            .where(inArray(orderItems.orderId, orderIds));
+    }
+
+    // Combine data structure
+    const activeOrders = orderRows.map(({ order, customer }) => {
+        const items = allItems
+            .filter((i) => i.item.orderId === order.id)
+            .map((i) => ({
+                ...i.item,
+                product: i.product,
+            }));
+
+        return {
+            ...order,
+            customer,
+            items,
+        };
     });
 
     return (
