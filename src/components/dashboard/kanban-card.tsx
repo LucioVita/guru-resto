@@ -98,17 +98,18 @@ export function KanbanCard({ order, isOverlay, onStatusChange }: { order: any; i
                 </div>
 
                 <div className="space-y-1">
-                    <p className="text-xs font-bold text-gray-700 truncate">
-                        {order.customer?.name || "Cliente Final"}
-                    </p>
                     <div className="flex flex-col gap-1 mt-2">
                         {order.items?.map((item: any) => (
-                            <div key={item.id} className="flex justify-between items-center text-[11px] text-gray-600 bg-gray-50/50 p-1 rounded border border-gray-100">
-                                <span className="font-medium">
-                                    <span className="text-primary font-bold">{item.quantity}x</span> {item.product?.name}
+                            <div key={item.id} className="flex justify-between items-center text-sm text-gray-800 bg-gray-50 p-2 rounded border border-gray-100">
+                                <span className="font-bold flex gap-2">
+                                    <span className="text-primary">{item.quantity}x</span>
+                                    <span className="truncate max-w-[140px]">{item.product?.name || "Producto"}</span>
                                 </span>
                             </div>
                         ))}
+                        {(!order.items || order.items.length === 0) && (
+                            <p className="text-xs text-gray-400 italic">Sin productos</p>
+                        )}
                     </div>
                 </div>
 

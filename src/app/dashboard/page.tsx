@@ -27,17 +27,22 @@ export default async function DashboardPage() {
         );
     }
 
-    // Fetch orders with manual joins to avoid LATERAL JOIN issues in MariaDB
-    const activeOrders = await db
-        .select()
-        .from(orders)
-        .where(
-            and(
-                eq(orders.businessId, session.user.businessId),
-                inArray(orders.status, ['pending', 'preparation', 'ready'])
-            )
-        )
-        .orderBy(desc(orders.createdAt));
+    // Fetch orders with relations
+    const activeOrders = await db.query.orders.findMany({
+        where: and(
+            eq(orders.businessId, session.user.businessId),
+            inArray(orders.status, ['pending', 'preparation', 'ready'])
+        ),
+        with: {
+            customer: true,
+            items: {
+                with: {
+                    product: true
+                }
+            }
+        },
+        orderBy: desc(orders.createdAt),
+    });
 
     return (
         <div className="space-y-6">

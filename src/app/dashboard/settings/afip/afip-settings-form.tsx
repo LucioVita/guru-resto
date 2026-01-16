@@ -75,7 +75,6 @@ export function AfipSettingsForm({ initialData }: { initialData: any }) {
                             name="afipCuit"
                             defaultValue={initialData?.afipCuit || ""}
                             placeholder="Sin guiones (ej: 20409378472)"
-                            required
                         />
                     </div>
 
@@ -87,7 +86,6 @@ export function AfipSettingsForm({ initialData }: { initialData: any }) {
                             type="number"
                             defaultValue={initialData?.afipPuntoVenta || 1}
                             placeholder="Ej: 1"
-                            required
                         />
                     </div>
                 </div>
@@ -100,7 +98,6 @@ export function AfipSettingsForm({ initialData }: { initialData: any }) {
                         type="password"
                         defaultValue={initialData?.afipToken || ""}
                         placeholder="Pega aquí tu Token de autorización"
-                        required
                     />
                     <p className="text-[10px] text-gray-400">Este token se obtiene desde el panel de Afip SDK.</p>
                 </div>
