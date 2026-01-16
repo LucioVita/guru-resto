@@ -4,11 +4,10 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { Clock, Printer, FileText, ChevronRight, MoreVertical } from "lucide-react";
+import { Clock, Printer, FileText, ChevronRight, MoreVertical, ClipboardList, Utensils } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePrint } from "@/hooks/use-print";
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle2 } from "lucide-react";
 
 export function KanbanCard({ order, isOverlay, onStatusChange }: { order: any; isOverlay?: boolean; onStatusChange?: (id: string, status: string) => void }) {
@@ -73,19 +72,50 @@ export function KanbanCard({ order, isOverlay, onStatusChange }: { order: any; i
                     <div className="flex flex-col">
                         <span className="font-black text-lg tracking-tighter text-gray-900">#{order.id.slice(-4)}</span>
                         <div className="mt-1">
-                            <Select
-                                value={order.status}
-                                onValueChange={(val) => onStatusChange?.(order.id, val)}
-                            >
-                                <SelectTrigger className={cn("h-6 border-none px-1.5 text-[10px] font-bold uppercase w-fit bg-transparent hover:bg-black/5", getStatusBadge(order.status))}>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="pending">Pendiente</SelectItem>
-                                    <SelectItem value="preparation">En Cocina</SelectItem>
-                                    <SelectItem value="ready">Listo</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            <div className="mt-1 flex items-center gap-1">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className={cn(
+                                        "h-6 w-6 rounded-full transition-all",
+                                        order.status === 'pending'
+                                            ? "bg-amber-500 text-white shadow-md hover:bg-amber-600 ring-2 ring-amber-200"
+                                            : "text-gray-300 hover:text-amber-500 hover:bg-amber-50"
+                                    )}
+                                    onClick={(e) => { e.stopPropagation(); onStatusChange?.(order.id, 'pending'); }}
+                                    title="Pasar a Pendiente"
+                                >
+                                    <ClipboardList className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className={cn(
+                                        "h-6 w-6 rounded-full transition-all",
+                                        order.status === 'preparation'
+                                            ? "bg-blue-500 text-white shadow-md hover:bg-blue-600 ring-2 ring-blue-200"
+                                            : "text-gray-300 hover:text-blue-500 hover:bg-blue-50"
+                                    )}
+                                    onClick={(e) => { e.stopPropagation(); onStatusChange?.(order.id, 'preparation'); }}
+                                    title="Pasar a Cocina"
+                                >
+                                    <Utensils className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className={cn(
+                                        "h-6 w-6 rounded-full transition-all",
+                                        order.status === 'ready'
+                                            ? "bg-green-500 text-white shadow-md hover:bg-green-600 ring-2 ring-green-200"
+                                            : "text-gray-300 hover:text-green-500 hover:bg-green-50"
+                                    )}
+                                    onClick={(e) => { e.stopPropagation(); onStatusChange?.(order.id, 'ready'); }}
+                                    title="Pasar a Listo"
+                                >
+                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                </Button>
+                            </div>
                         </div>
                     </div>
                     <div className="flex flex-col items-end gap-1">
