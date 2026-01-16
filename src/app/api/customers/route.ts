@@ -1,0 +1,119 @@
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { db } from "@/db";
+import { apiKeys, customers } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
+
+const customerSchema = z.object({
+    name: z.string().min(1),
+    phone: z.string().min(1),
+    address: z.string().optional(),
+    email: z.string().email().optional().or(z.literal("")),
+});
+
+export async function POST(req: NextRequest) {
+    try {
+        // 1. Authentication (x-api-key)
+        const apiKeyHeader = req.headers.get("x-api-key");
+
+        if (!apiKeyHeader) {
+            return NextResponse.json(
+                { error: "Unauthorized: Missing x-api-key header" },
+                { status: 401 }
+            );
+        }
+
+        const validKey = await db.query.apiKeys.findFirst({
+            where: and(eq(apiKeys.key, apiKeyHeader), eq(apiKeys.isActive, true)),
+        });
+
+        if (!validKey) {
+            return NextResponse.json(
+                { error: "Unauthorized: Invalid or inactive API Key" },
+                { status: 401 }
+            );
+        }
+
+        const businessId = validKey.businessId;
+
+        // 2. Validate Body
+        const body = await req.json();
+        const validation = customerSchema.safeParse(body);
+
+        if (!validation.success) {
+            return NextResponse.json(
+                { error: "Validation Error", details: validation.error.format() },
+                { status: 400 }
+            );
+        }
+
+        const { name, phone, address, email } = validation.data;
+
+        // 3. Check for Duplicates (Phone + Business)
+        const existingCustomer = await db.query.customers.findFirst({
+            where: and(
+                eq(customers.businessId, businessId),
+                eq(customers.phone, phone)
+            )
+        });
+
+        if (existingCustomer) {
+            return NextResponse.json(
+                {
+                    error: "Conflict: Customer already exists with this phone number",
+                    customerId: existingCustomer.id,
+                    // Optionally return the customer object if needed
+                    customer: {
+                        name: existingCustomer.name,
+                        address: existingCustomer.address
+                    }
+                },
+                { status: 409 }
+            );
+        }
+
+        // 4. Determine Status
+        // "Si creas un cliente sin proporcionarle un address (domicilio), el cliente se guardará automáticamente con el estado 'esperando_direccion'"
+        let status = "active";
+        if (!address || address.trim() === "") {
+            status = "waiting_address";
+        }
+
+        // 5. Create Customer
+        const newId = crypto.randomUUID();
+        await db.insert(customers).values({
+            id: newId,
+            businessId: businessId,
+            name,
+            phone,
+            address: address || null,
+            email: email || null,
+            status: status,
+        });
+
+        return NextResponse.json({
+            success: true,
+            message: "Customer created successfully",
+            customerId: newId,
+            status: status
+        }, { status: 201 });
+
+    } catch (error) {
+        console.error("API Customer Error:", error);
+        return NextResponse.json(
+            { error: "Internal Server Error" },
+            { status: 500 }
+        );
+    }
+}
+
+export async function OPTIONS(req: NextRequest) {
+    return new NextResponse(null, {
+        status: 200,
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, x-api-key",
+        },
+    });
+}

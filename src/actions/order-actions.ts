@@ -8,6 +8,39 @@ import { auth } from "@/auth";
 import { sendWebhook } from "@/lib/webhook";
 import { businesses } from "@/db/schema";
 import { createElectronicInvoice } from "@/lib/afip";
+import { desc } from "drizzle-orm";
+
+export async function getLiveOrders() {
+    const session = await auth();
+    if (!session || !session.user.businessId) return [];
+
+    const liveOrders = await db.select({
+        order: orders,
+        customer: customers,
+    })
+        .from(orders)
+        .leftJoin(customers, eq(orders.customerId, customers.id))
+        .where(and(
+            eq(orders.businessId, session.user.businessId),
+            eq(orders.status, 'pending') // Only pending/active for Kanban usually
+        ))
+        .orderBy(desc(orders.createdAt));
+
+    // Fetch items for each order efficiently? Or just let the UI fetch details?
+    // For Kanban card, usually just total and items summary is needed.
+    // Let's fetch items too for completeness of "snapshot" logic.
+
+    const ordersWithItems = await Promise.all(liveOrders.map(async ({ order, customer }) => {
+        const items = await db.select().from(orderItems).where(eq(orderItems.orderId, order.id));
+        return {
+            ...order,
+            customer,
+            items
+        };
+    }));
+
+    return ordersWithItems;
+}
 
 export async function createOrderInvoiceAction(orderId: string) {
     const session = await auth();
@@ -103,31 +136,80 @@ export async function createOrderAction(data: {
     items: { productId: string; quantity: number; price: string }[];
     total: string;
     paymentMethod: string;
+    customerData?: {
+        name: string;
+        phone: string;
+        address: string;
+    };
 }) {
     const session = await auth();
     if (!session || !session.user.businessId) throw new Error("Unauthorized");
+
+    let finalCustomerId = data.customerId;
+
+    // Handle Customer Creation/Lookup if not provided but data exists
+    if (!finalCustomerId && data.customerData && data.customerData.name && data.customerData.phone) {
+        // 1. Check if customer exists by phone
+        const existingCustomer = await db.query.customers.findFirst({
+            where: and(
+                eq(customers.businessId, session.user.businessId),
+                eq(customers.phone, data.customerData.phone)
+            )
+        });
+
+        if (existingCustomer) {
+            finalCustomerId = existingCustomer.id;
+            // Optional: Update address if changed?
+            if (data.customerData.address) {
+                await db.update(customers)
+                    .set({ address: data.customerData.address })
+                    .where(eq(customers.id, finalCustomerId));
+            }
+        } else {
+            // 2. Create new customer
+            const newCustomerId = crypto.randomUUID();
+            await db.insert(customers).values({
+                id: newCustomerId,
+                businessId: session.user.businessId,
+                name: data.customerData.name,
+                phone: data.customerData.phone,
+                address: data.customerData.address || "",
+                status: (!data.customerData.address || data.customerData.address.trim() === "") ? 'waiting_address' : 'active'
+            });
+            finalCustomerId = newCustomerId;
+        }
+    }
 
     const id = crypto.randomUUID();
     await db.insert(orders).values({
         id,
         businessId: session.user.businessId,
-        customerId: data.customerId,
+        customerId: finalCustomerId,
         total: data.total,
         paymentMethod: data.paymentMethod,
         status: 'pending',
+        source: 'web', // Manual orders are from web/dashboard
     });
 
     const [newOrder] = await db.select().from(orders).where(eq(orders.id, id));
 
+
     if (newOrder) {
-        await db.insert(orderItems).values(
-            data.items.map(item => ({
+        // Fetch product names for the items
+        const itemPromise = data.items.map(async (item) => {
+            const [product] = await db.select().from(products).where(eq(products.id, item.productId));
+            return {
                 orderId: newOrder.id,
                 productId: item.productId,
+                name: product?.name || 'Unknown Product', // Fallback
                 quantity: item.quantity,
                 price: item.price,
-            }))
-        );
+            };
+        });
+
+        const orderItemsValues = await Promise.all(itemPromise);
+
+        await db.insert(orderItems).values(orderItemsValues);
     }
 
     revalidatePath("/dashboard");

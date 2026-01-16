@@ -53,6 +53,8 @@ export const customers = mysqlTable("customers", {
     name: varchar("name", { length: 255 }).notNull(),
     phone: varchar("phone", { length: 50 }),
     address: varchar("address", { length: 500 }),
+    email: varchar("email", { length: 255 }),
+    status: varchar("status", { length: 50 }).default("active"), // active, waiting_address, archived
     notes: varchar("notes", { length: 500 }),
     createdAt: timestamp("created_at").defaultNow(),
 });
@@ -71,6 +73,7 @@ export const orders = mysqlTable("orders", {
     afipInvoiceType: int("afip_invoice_type"),
     afipInvoicePuntoVenta: int("afip_invoice_punto_venta"),
     afipInvoicedAt: timestamp("afip_invoiced_at"),
+    source: varchar("source", { length: 50 }).default("web"), // web, whatsapp, phone, etc.
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -79,18 +82,15 @@ export const orderItems = mysqlTable("order_items", {
     id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
     orderId: varchar("order_id", { length: 36 }).references(() => orders.id, { onDelete: 'cascade' }).notNull(),
     productId: varchar("product_id", { length: 36 }).references(() => products.id),
+    name: varchar("name", { length: 255 }).notNull(), // Snapshot of product name or ad-hoc name
     quantity: int("quantity").notNull(),
     price: decimal("price", { precision: 10, scale: 2 }).notNull(),
     notes: varchar("notes", { length: 500 }),
 });
 
 // Relations
-export const businessRelations = relations(businesses, ({ many }) => ({
-    users: many(users),
-    products: many(products),
-    customers: many(customers),
-    orders: many(orders),
-}));
+// Old businessRelations removed
+
 
 export const userRelations = relations(users, ({ one }) => ({
     business: one(businesses, {
@@ -149,4 +149,32 @@ export const orderItemRelations = relations(orderItems, ({ one }) => ({
         fields: [orderItems.productId],
         references: [products.id],
     }),
+}));
+
+export const apiKeys = mysqlTable("api_keys", {
+    id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+    businessId: varchar("business_id", { length: 36 }).references(() => businesses.id, { onDelete: 'cascade' }).notNull(),
+    key: varchar("key", { length: 255 }).unique().notNull(), // The actual API Key (hashed ideally, but plain for now based on request simplicity or hashed if specified)
+    // Request says "key (hash o string único)". I'll use a unique string for now to match typical API key usage (e.g. sk_live_...) 
+    // If strict security is needed, we'd hash it, but let's stick to unique string for lookup speed unless specified.
+    name: varchar("name", { length: 100 }), // e.g. "N8N Integration"
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+    lastUsedAt: timestamp("last_used_at"),
+});
+
+export const apiKeyRelations = relations(apiKeys, ({ one }) => ({
+    business: one(businesses, {
+        fields: [apiKeys.businessId],
+        references: [businesses.id],
+    }),
+}));
+
+// Update business relations to include apiKeys
+export const businessRelations = relations(businesses, ({ many }) => ({
+    users: many(users),
+    products: many(products),
+    customers: many(customers),
+    orders: many(orders),
+    apiKeys: many(apiKeys),
 }));

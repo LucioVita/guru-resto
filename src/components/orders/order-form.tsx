@@ -61,6 +61,11 @@ export default function OrderForm({ products }: { products: any[] }) {
                 items: cart,
                 total: total.toFixed(2),
                 paymentMethod,
+                customerData: (customerName && customerPhone) ? {
+                    name: customerName,
+                    phone: customerPhone,
+                    address: customerAddress
+                } : undefined,
             });
             toast.success("Pedido creado exitosamente");
             router.push("/dashboard");

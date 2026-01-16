@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { db } from './index';
-import { businesses, users } from './schema';
+import { businesses, users, apiKeys } from './schema';
 import bcrypt from 'bcryptjs';
 
 async function createTenant(businessName: string, adminEmail: string, pass: string) {
@@ -32,9 +32,20 @@ async function createTenant(businessName: string, adminEmail: string, pass: stri
         });
 
         console.log('✅ Admin user created:', userId);
+        // 3. Create Default API Key
+        const apiKey = 'sk_' + crypto.randomUUID().replace(/-/g, '');
+        await db.insert(apiKeys).values({
+            businessId: businessId,
+            key: apiKey,
+            name: 'Default Key',
+            isActive: true,
+        });
+
+        console.log('✅ API Key created:', apiKey);
         console.log('-------------------------');
         console.log(`Email: ${adminEmail}`);
         console.log(`Password: ${pass}`);
+        console.log(`API Key: ${apiKey}`);
         console.log(`Link: /login`);
         console.log('-------------------------');
 
