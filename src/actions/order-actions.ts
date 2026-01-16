@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from "@/db";
-import { orders, orderItems } from "@/db/schema";
+import { orders, orderItems, customers, products } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
@@ -13,18 +13,22 @@ export async function createOrderInvoiceAction(orderId: string) {
     const session = await auth();
     if (!session || !session.user.businessId) throw new Error("Unauthorized");
 
-    const order = await db.query.orders.findFirst({
-        where: and(eq(orders.id, orderId), eq(orders.businessId, session.user.businessId)),
-        with: {
-            business: true,
-            customer: true,
-        }
-    });
+    const [order] = await db.select().from(orders)
+        .where(and(eq(orders.id, orderId), eq(orders.businessId, session.user.businessId)));
 
     if (!order) throw new Error("Order not found");
-    if (order.afipCae) throw new Error("Order already invoiced");
 
-    const business = order.business;
+    const [business] = await db.select().from(businesses).where(eq(businesses.id, session.user.businessId));
+    const [customer] = order.customerId ? await db.select().from(customers).where(eq(customers.id, order.customerId)) : [null];
+
+    // Combine for compatibility with existing code structure if beneficial, or just use variables
+    const orderWithData = { ...order, business, customer };
+
+    if (!orderWithData) throw new Error("Order not found");
+    if (orderWithData.afipCae) throw new Error("Order already invoiced");
+
+    // business is already fetched above
+    if (!business) throw new Error("Business not found");
     if (!business.afipCuit || !business.afipToken) {
         throw new Error("AFIP not configured for this business. Please check Settings.");
     }
@@ -64,21 +68,29 @@ export async function createOrderInvoiceAction(orderId: string) {
             })
             .where(eq(orders.id, orderId));
 
-        const updatedOrder = await db.query.orders.findFirst({
-            where: eq(orders.id, orderId),
-            with: {
-                business: true,
-                customer: true,
-                items: {
-                    with: {
-                        product: true
-                    }
-                }
-            }
-        });
+        // Fetch the updated order with relations for the return
+        // We use manual selects again
+        const [updatedOrder] = await db.select().from(orders).where(eq(orders.id, orderId));
+        const [updatedCustomer] = updatedOrder.customerId ? await db.select().from(customers).where(eq(customers.id, updatedOrder.customerId)) : [null];
+        const items = await db.select({
+            item: orderItems,
+            product: products
+        })
+            .from(orderItems)
+            .leftJoin(products, eq(orderItems.productId, products.id))
+            .where(eq(orderItems.orderId, orderId));
+
+        const formattedItems = items.map(({ item, product }) => ({ ...item, product }));
+
+        const finalOrder = {
+            ...updatedOrder,
+            business,
+            customer: updatedCustomer,
+            items: formattedItems
+        };
 
         revalidatePath("/dashboard");
-        return { success: true, order: updatedOrder };
+        return { success: true, order: finalOrder };
     } catch (error: any) {
         console.error("AFIP Error:", error);
         throw new Error(error.message || "Failed to generate AFIP invoice");
@@ -105,9 +117,7 @@ export async function createOrderAction(data: {
         status: 'pending',
     });
 
-    const newOrder = await db.query.orders.findFirst({
-        where: eq(orders.id, id),
-    });
+    const [newOrder] = await db.select().from(orders).where(eq(orders.id, id));
 
     if (newOrder) {
         await db.insert(orderItems).values(
@@ -123,9 +133,7 @@ export async function createOrderAction(data: {
     revalidatePath("/dashboard");
 
     // Trigger Webhook
-    const business = await db.query.businesses.findFirst({
-        where: eq(businesses.id, session.user.businessId),
-    });
+    const [business] = await db.select().from(businesses).where(eq(businesses.id, session.user.businessId));
 
     if (business?.webhookUrl) {
         await sendWebhook(business.webhookUrl, {
@@ -149,9 +157,7 @@ export async function updateOrderStatusAction(orderId: string, status: any) {
     revalidatePath("/dashboard");
 
     // Trigger Webhook
-    const business = await db.query.businesses.findFirst({
-        where: eq(businesses.id, session.user.businessId),
-    });
+    const [business] = await db.select().from(businesses).where(eq(businesses.id, session.user.businessId));
 
     if (business?.webhookStatusUrl) {
         await sendWebhook(business.webhookStatusUrl, {
