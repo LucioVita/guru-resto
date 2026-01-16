@@ -12,6 +12,9 @@ export const businesses = mysqlTable("businesses", {
     apiKey: varchar("api_key", { length: 255 }).unique(),
     webhookUrl: varchar("webhook_url", { length: 500 }),
     webhookStatusUrl: varchar("webhook_status_url", { length: 500 }),
+    // Business Info
+    phone: varchar("phone", { length: 50 }),
+    address: varchar("address", { length: 500 }),
     // AFIP Settings
     afipCuit: varchar("afip_cuit", { length: 20 }),
     afipToken: varchar("afip_token", { length: 500 }),

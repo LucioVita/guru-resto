@@ -81,6 +81,7 @@ export const usePrint = () => {
             <span class="bold">Fecha:</span> ${new Date(order.createdAt).toLocaleString('es-AR')}<br>
             <span class="bold">Cliente:</span> ${order.customer?.name || 'Consumidor Final'}<br>
             ${order.customer?.phone ? `<span class="bold">Tel:</span> ${order.customer.phone}<br>` : ''}
+            ${order.customer?.address ? `<span class="bold">Dir:</span> ${order.customer.address}<br>` : ''}
           </div>
 
           <div class="divider"></div>
@@ -116,7 +117,7 @@ export const usePrint = () => {
           ` : ''}
 
           <div class="footer center">
-            ${type === 'comanda' ? '--- FIN DE COMANDA ---' : '¡Gracias por su visita!'}
+            ${type === 'comanda' ? '--- FIN DE COMANDA ---' : '¡Gracias por elegirnos!'}
           </div>
         </body>
       </html>

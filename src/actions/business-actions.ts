@@ -23,6 +23,8 @@ export async function updateAfipSettingsAction(formData: FormData) {
     };
 
     setIfPresent("name");
+    setIfPresent("phone");
+    setIfPresent("address");
     setIfPresent("apiKey");
     setIfPresent("webhookUrl");
     setIfPresent("webhookStatusUrl");
