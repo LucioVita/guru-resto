@@ -88,7 +88,7 @@ export default function OrderForm({ products }: { products: any[] }) {
                                     onClick={() => addToCart(product)}
                                     disabled={!product.isAvailable}
                                 >
-                                    <span className="font-bold">{product.name}</span>
+                                    <span className="font-bold w-full text-left truncate" title={product.name}>{product.name}</span>
                                     <span className="text-sm text-gray-600 font-semibold">${Math.round(parseFloat(product.price))}</span>
                                     {!product.isAvailable && <span className="text-[10px] text-red-500 uppercase">No disponible</span>}
                                 </Button>
