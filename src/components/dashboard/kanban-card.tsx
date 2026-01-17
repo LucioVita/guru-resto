@@ -4,7 +4,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { Clock, Printer, FileText, ChevronRight, MoreVertical, ClipboardList, Utensils } from "lucide-react";
+import { Clock, Printer, FileText, ChevronRight, MoreVertical, ClipboardList, Utensils, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePrint } from "@/hooks/use-print";
 
@@ -70,7 +70,18 @@ export function KanbanCard({ order, isOverlay, onStatusChange }: { order: any; i
             <CardContent className="p-3 space-y-3">
                 <div className="flex justify-between items-start" onPointerDown={(e) => e.stopPropagation()}>
                     <div className="flex flex-col">
-                        <span className="font-black text-lg tracking-tighter text-gray-900">#{order.id.slice(-4)}</span>
+                        <div className="flex items-center gap-2">
+                            <span className="font-black text-lg tracking-tighter text-gray-900">#{order.id.slice(-4)}</span>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                                onClick={(e) => { e.stopPropagation(); if (confirm('¿Seguro que deseas eliminar este pedido?')) onStatusChange?.(order.id, 'cancelled'); }}
+                                title="Eliminar Pedido"
+                            >
+                                <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                        </div>
                         <div className="mt-1">
                             <div className="mt-1 flex items-center gap-1">
                                 <Button

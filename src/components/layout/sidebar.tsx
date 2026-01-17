@@ -1,13 +1,14 @@
 'use client';
 
 import Link from "next/link";
-import { LayoutDashboard, ShoppingCart, Users, Package, Settings, Calculator, FileText } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Users, Package, Settings, Calculator, FileText, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
 const items = [
     { href: "/dashboard", icon: LayoutDashboard, label: "Tablero" },
     { href: "/dashboard/orders/new", icon: ShoppingCart, label: "Tomar Pedido" },
+    { href: "/dashboard/orders", icon: ClipboardList, label: "Pedidos" },
     { href: "/dashboard/products", icon: Package, label: "Productos" },
     { href: "/dashboard/customers", icon: Users, label: "Clientes" },
     { href: "/dashboard/settings/afip", icon: FileText, label: "Facturación" },

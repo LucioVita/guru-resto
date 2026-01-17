@@ -30,7 +30,6 @@ export default async function CustomersPage() {
                     <h1 className="text-3xl font-black tracking-tighter">Clientes</h1>
                     <p className="text-gray-500 text-sm">Gestiona la base de datos de tus clientes</p>
                 </div>
-                <CustomerDialog />
             </div>
 
             <CustomerTable customers={customerList} />
