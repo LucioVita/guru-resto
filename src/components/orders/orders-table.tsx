@@ -32,16 +32,16 @@ export function OrdersTable({ orders }: { orders: any[] }) {
     };
 
     return (
-        <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
+        <div className="border rounded-lg overflow-hidden bg-white shadow-sm text-gray-900">
             <Table>
-                <TableHeader className="bg-gray-50/50">
+                <TableHeader className="bg-gray-100">
                     <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Fecha</TableHead>
-                        <TableHead>Cliente</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                        <TableHead className="w-[100px] text-right">Acciones</TableHead>
+                        <TableHead className="font-bold text-gray-700">ID</TableHead>
+                        <TableHead className="font-bold text-gray-700">Fecha</TableHead>
+                        <TableHead className="font-bold text-gray-700">Cliente</TableHead>
+                        <TableHead className="font-bold text-gray-700">Estado</TableHead>
+                        <TableHead className="text-right font-bold text-gray-700">Total</TableHead>
+                        <TableHead className="w-[100px] text-right font-bold text-gray-700">Acciones</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -53,14 +53,14 @@ export function OrdersTable({ orders }: { orders: any[] }) {
                         </TableRow>
                     ) : (
                         orders.map((order) => (
-                            <TableRow key={order.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => handleView(order)}>
-                                <TableCell className="font-medium">
+                            <TableRow key={order.id} className="hover:bg-gray-100 transition-colors cursor-pointer border-b border-gray-100" onClick={() => handleView(order)}>
+                                <TableCell className="font-medium text-gray-900">
                                     #{order.id.slice(-4)}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="text-gray-600">
                                     {new Date(order.createdAt).toLocaleDateString()} {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="text-gray-900 font-medium">
                                     {order.customer?.name || 'Cliente de paso'}
                                 </TableCell>
                                 <TableCell>
@@ -72,14 +72,14 @@ export function OrdersTable({ orders }: { orders: any[] }) {
                                         order.status
                                     )}
                                 </TableCell>
-                                <TableCell className="text-right font-bold">
+                                <TableCell className="text-right font-bold text-gray-900">
                                     ${order.total}
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-8 w-8 hover:text-blue-600"
+                                        className="h-8 w-8 text-gray-500 hover:text-blue-600 hover:bg-blue-50"
                                         onClick={(e) => { e.stopPropagation(); handleView(order); }}
                                     >
                                         <Eye className="h-4 w-4" />
