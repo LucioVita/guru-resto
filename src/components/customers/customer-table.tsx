@@ -37,14 +37,14 @@ export function CustomerTable({ customers }: { customers: any[] }) {
     };
 
     return (
-        <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
+        <div className="border rounded-lg overflow-hidden bg-white shadow-sm text-gray-900">
             <Table>
-                <TableHeader className="bg-gray-50/50">
+                <TableHeader className="bg-gray-100">
                     <TableRow>
-                        <TableHead>Nombre</TableHead>
-                        <TableHead>Teléfono</TableHead>
-                        <TableHead>Dirección</TableHead>
-                        <TableHead className="w-[100px] text-right">Acciones</TableHead>
+                        <TableHead className="font-bold text-gray-700">Nombre</TableHead>
+                        <TableHead className="font-bold text-gray-700">Teléfono</TableHead>
+                        <TableHead className="font-bold text-gray-700">Dirección</TableHead>
+                        <TableHead className="w-[100px] text-right font-bold text-gray-700">Acciones</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -56,8 +56,8 @@ export function CustomerTable({ customers }: { customers: any[] }) {
                         </TableRow>
                     ) : (
                         customers.map((customer) => (
-                            <TableRow key={customer.id} className="hover:bg-gray-50/50 transition-colors">
-                                <TableCell className="font-medium">
+                            <TableRow key={customer.id} className="hover:bg-gray-100 transition-colors border-b border-gray-100">
+                                <TableCell className="font-medium text-gray-900">
                                     <div className="flex flex-col">
                                         <span className="text-base">{customer.name}</span>
                                         {customer.status === 'waiting_address' && (
@@ -70,8 +70,8 @@ export function CustomerTable({ customers }: { customers: any[] }) {
                                 <TableCell>
                                     <div className="flex flex-col gap-1 text-sm text-gray-600">
                                         {customer.phone ? (
-                                            <div className="flex items-center gap-1.5">
-                                                <Phone className="h-3 w-3" />
+                                            <div className="flex items-center gap-1.5 text-gray-900">
+                                                <Phone className="h-3 w-3 text-gray-500" />
                                                 {customer.phone}
                                             </div>
                                         ) : (
@@ -81,8 +81,8 @@ export function CustomerTable({ customers }: { customers: any[] }) {
                                 </TableCell>
                                 <TableCell>
                                     {customer.address ? (
-                                        <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                                            <MapPin className="h-3 w-3" />
+                                        <div className="flex items-center gap-1.5 text-sm text-gray-900">
+                                            <MapPin className="h-3 w-3 text-gray-500" />
                                             {customer.address}
                                         </div>
                                     ) : (
@@ -94,7 +94,7 @@ export function CustomerTable({ customers }: { customers: any[] }) {
                                         <CustomerDialog
                                             customer={customer}
                                             trigger={
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-blue-600">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-blue-600">
                                                     <Edit className="h-4 w-4" />
                                                 </Button>
                                             }
@@ -102,7 +102,7 @@ export function CustomerTable({ customers }: { customers: any[] }) {
 
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-red-600">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-red-600">
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
                                             </AlertDialogTrigger>

@@ -27,31 +27,31 @@ export function OrderDetailsDialog({ order, open, onOpenChange }: { order: any; 
                 </DialogHeader>
 
                 <div className="space-y-4">
-                    <div className="bg-gray-50 p-3 rounded-lg text-sm space-y-1">
-                        <p><strong>Cliente:</strong> {order.customer?.name || 'Cliente de paso'}</p>
-                        {order.customer?.phone && <p><strong>Teléfono:</strong> {order.customer.phone}</p>}
-                        {order.customer?.address && <p><strong>Dirección:</strong> {order.customer.address}</p>}
+                    <div className="bg-gray-50 p-3 rounded-lg text-sm space-y-1 text-gray-900 border border-gray-100">
+                        <p><strong className="text-gray-700">Cliente:</strong> {order.customer?.name || 'Cliente de paso'}</p>
+                        {order.customer?.phone && <p><strong className="text-gray-700">Teléfono:</strong> {order.customer.phone}</p>}
+                        {order.customer?.address && <p><strong className="text-gray-700">Dirección:</strong> {order.customer.address}</p>}
                     </div>
 
-                    <div className="border rounded-lg overflow-hidden">
+                    <div className="border rounded-lg overflow-hidden border-gray-200">
                         <table className="w-full text-sm">
-                            <thead className="bg-gray-100">
+                            <thead className="bg-gray-100 text-gray-700">
                                 <tr className="text-left">
-                                    <th className="p-2">Cant</th>
-                                    <th className="p-2">Producto</th>
-                                    <th className="p-2 text-right">Precio</th>
+                                    <th className="p-2 font-bold">Cant</th>
+                                    <th className="p-2 font-bold">Producto</th>
+                                    <th className="p-2 text-right font-bold">Precio</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y">
+                            <tbody className="divide-y divide-gray-100 bg-white">
                                 {order.items?.map((item: any) => (
-                                    <tr key={item.id}>
-                                        <td className="p-2">{item.quantity}x</td>
+                                    <tr key={item.id} className="text-gray-900">
+                                        <td className="p-2 font-medium">{item.quantity}x</td>
                                         <td className="p-2">{item.product?.name || item.name}</td>
-                                        <td className="p-2 text-right">${item.price}</td>
+                                        <td className="p-2 text-right text-gray-700 font-mono">${item.price}</td>
                                     </tr>
                                 ))}
                             </tbody>
-                            <tfoot className="bg-gray-50 font-bold">
+                            <tfoot className="bg-gray-50 font-bold text-gray-900">
                                 <tr>
                                     <td colSpan={2} className="p-2 text-right">Total:</td>
                                     <td className="p-2 text-right">${order.total}</td>
