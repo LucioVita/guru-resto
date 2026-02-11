@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { customers } from "@/db/schema";
-import { eq, and, ilike, or } from "drizzle-orm";
+import { eq, and, ilike, or, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 
@@ -58,7 +58,9 @@ export async function deleteCustomerAction(id: string) {
     const session = await auth();
     if (!session || !session.user.businessId) throw new Error("Unauthorized");
 
-    await db.delete(customers)
+    // Use soft delete (archive) instead of hard delete to preserve order history
+    await db.update(customers)
+        .set({ status: 'archived' })
         .where(and(eq(customers.id, id), eq(customers.businessId, session.user.businessId)));
 
     revalidatePath("/dashboard/customers");
@@ -72,6 +74,7 @@ export async function searchCustomers(query: string) {
     return db.select().from(customers).where(
         and(
             eq(customers.businessId, session.user.businessId),
+            ne(customers.status, "archived"),
             or(
                 ilike(customers.name, `%${query}%`),
                 ilike(customers.phone, `%${query}%`)

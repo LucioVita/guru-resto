@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { apiKeys, customers } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or, like } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
     try {
@@ -29,10 +29,25 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: "Missing 'phone' query parameter" }, { status: 400 });
         }
 
+        // Enhanced search: Check exact match OR suffix match (last 8 digits) OR Argentina 549->54
+        const cleanPhone = phone.replace(/\D/g, "");
+        let searchCondition = eq(customers.phone, phone);
+
+        if (cleanPhone.length >= 8) {
+            const suffix = cleanPhone.slice(-8);
+            const withoutNine = cleanPhone.startsWith("549") ? "54" + cleanPhone.slice(3) : null;
+
+            searchCondition = or(
+                eq(customers.phone, phone), // Exact
+                like(customers.phone, `%${suffix}`), // Suffix (most robust)
+                withoutNine ? eq(customers.phone, withoutNine) : undefined // Specific 549 fix
+            )!;
+        }
+
         const customer = await db.query.customers.findFirst({
             where: and(
                 eq(customers.businessId, businessId),
-                eq(customers.phone, phone)
+                searchCondition
             )
         });
 

@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { customers } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, ne, and } from "drizzle-orm";
 // import components
 import { CustomerTable } from "@/components/customers/customer-table";
 import { CustomerDialog } from "@/components/customers/customer-dialog";
@@ -19,7 +19,10 @@ export default async function CustomersPage() {
     }
 
     const customerList = await db.query.customers.findMany({
-        where: eq(customers.businessId, session.user.businessId),
+        where: and(
+            eq(customers.businessId, session.user.businessId),
+            ne(customers.status, 'archived')
+        ),
         orderBy: [desc(customers.createdAt)],
     });
 
