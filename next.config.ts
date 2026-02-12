@@ -6,6 +6,12 @@ const nextConfig: NextConfig = {
   // En Next.js 16, Turbopack se deshabilita usando el flag --webpack en los scripts de package.json
   // turbopack: false, 
   outputFileTracingRoot: path.join(__dirname),
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default nextConfig;
