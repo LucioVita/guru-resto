@@ -1,4 +1,0 @@
-DATABASE_URL=mysql://u938616704_guru_user_app:GuruR357o_2026@localhost:3306/u938616704_gururesto_app
-AUTH_SECRET=6e96987f2f63810842e0573c9f878f79f4268e378c3b169524e4d41e779b76c1
-AUTH_URL=https://gururesto.guruweb.com.ar/
-AUTH_TRUST_HOST=true
