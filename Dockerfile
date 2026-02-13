@@ -19,14 +19,12 @@ COPY . .
 # Deshabilitar telemetría de Next.js durante build
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Declarar ARGs para variables de entorno en build time
 ARG DATABASE_URL
 ARG AUTH_SECRET
 ARG AUTH_URL
 ARG AUTH_TRUST_HOST
 ARG NODE_ENV
 
-# Hacer disponibles las variables durante el build
 ENV DATABASE_URL=$DATABASE_URL
 ENV AUTH_SECRET=$AUTH_SECRET
 ENV AUTH_URL=$AUTH_URL
