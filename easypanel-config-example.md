@@ -26,12 +26,12 @@ Build Args: (ninguno necesario)
 ### Environment Variables
 
 ```bash
-# Database
-DATABASE_URL=mysql://u938616704_guru_user:GuruR357o_2026@srv716.hstgr.io:3306/u938616704_gururesto
+# Database - ⚠️ USAR TUS PROPIAS CREDENCIALES DE HOSTINGER
+DATABASE_URL=mysql://TU_USUARIO:TU_PASSWORD@TU_HOST:3306/TU_DATABASE
 
 # Authentication (NextAuth v5)
 AUTH_SECRET=<generar-con-openssl-rand-base64-32>
-AUTH_URL=https://gururesto.guruweb.com.ar
+AUTH_URL=https://tu-dominio.com
 AUTH_TRUST_HOST=true
 
 # Environment
@@ -185,14 +185,16 @@ El formato es:
 mysql://usuario:contraseña@host:puerto/basededatos
 ```
 
-Tu configuración actual:
+**Ejemplo con tus credenciales de Hostinger:**
 ```
-Usuario: u938616704_guru_user
-Contraseña: GuruR357o_2026
-Host: srv716.hstgr.io
+Usuario: tu_usuario_mysql
+Contraseña: tu_password_mysql
+Host: srv716.hstgr.io (o el host de tu DB)
 Puerto: 3306
-Database: u938616704_gururesto
+Database: tu_nombre_base_datos
 ```
+
+⚠️ **IMPORTANTE:** Usa tus propias credenciales de MySQL de Hostinger, no compartas estas credenciales en el código.
 
 ### Para AUTH_URL
 

@@ -21,10 +21,12 @@ git push origin main
 
 ## 3️⃣ Variables de Entorno
 
+⚠️ **Usar tus credenciales reales de Hostinger:**
+
 ```bash
-DATABASE_URL=mysql://u938616704_guru_user:GuruR357o_2026@srv716.hstgr.io:3306/u938616704_gururesto
+DATABASE_URL=mysql://TU_USUARIO:TU_PASSWORD@TU_HOST:3306/TU_DATABASE
 AUTH_SECRET=<ejecutar: openssl rand -base64 32>
-AUTH_URL=https://gururesto.guruweb.com.ar
+AUTH_URL=https://tu-dominio.com
 AUTH_TRUST_HOST=true
 NODE_ENV=production
 ```

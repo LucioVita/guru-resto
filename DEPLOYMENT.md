@@ -60,15 +60,11 @@ git push origin main
    - **Domain:** `gururesto.guruweb.com.ar`
    - **Enable HTTPS:** ✅ (importante para NextAuth)
 
-## 🔐 Paso 3: Configurar Variables de Entorno
-
-En la sección **Environment** de Easypanel, agrega las siguientes variables:
-
 | Variable | Valor | Descripción |
 |----------|-------|-------------|
-| `DATABASE_URL` | `mysql://u938616704_guru_user:GuruR357o_2026@srv716.hstgr.io:3306/u938616704_gururesto` | Conexión a MySQL |
+| `DATABASE_URL` | `mysql://TU_USUARIO:TU_PASSWORD@TU_HOST:3306/TU_DATABASE` | Conexión a MySQL (usar tus credenciales de Hostinger) |
 | `AUTH_SECRET` | `(generar un secret aleatorio)` | Secret para NextAuth |
-| `AUTH_URL` | `https://gururesto.guruweb.com.ar` | URL pública de la app |
+| `AUTH_URL` | `https://tu-dominio.com` | URL pública de la app |
 | `AUTH_TRUST_HOST` | `true` | Necesario para reverse proxy |
 | `NODE_ENV` | `production` | Ambiente de ejecución |
 

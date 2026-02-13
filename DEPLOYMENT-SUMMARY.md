@@ -44,9 +44,10 @@ Sigue la guía en `DEPLOYMENT.md` para:
 Necesitarás configurar estas variables en Easypanel:
 
 ```bash
-DATABASE_URL=mysql://u938616704_guru_user:GuruR357o_2026@srv716.hstgr.io:3306/u938616704_gururesto
+# ⚠️ USAR TUS CREDENCIALES REALES DE HOSTINGER
+DATABASE_URL=mysql://TU_USUARIO:TU_PASSWORD@TU_HOST:3306/TU_DATABASE
 AUTH_SECRET=<generar-nuevo-secret-con-openssl>
-AUTH_URL=https://gururesto.guruweb.com.ar
+AUTH_URL=https://tu-dominio.com
 AUTH_TRUST_HOST=true
 NODE_ENV=production
 ```
