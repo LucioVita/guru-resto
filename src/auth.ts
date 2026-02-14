@@ -25,6 +25,9 @@ async function getUser(email: string) {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     ...authConfig,
+    secret: process.env.AUTH_SECRET,
+    trustHost: true,
+    debug: process.env.NODE_ENV !== 'production', // Cambiar a true si necesitas ver todo en consola
     providers: [
         Credentials({
             async authorize(credentials) {
@@ -35,18 +38,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 if (parsedCredentials.success) {
                     const { email, password } = parsedCredentials.data;
                     const user = await getUser(email);
-                    if (!user) return null;
+
+                    if (!user) {
+                        console.log(`[AUTH] Login fallido: Usuario no encontrado (${email})`);
+                        return null;
+                    }
 
                     const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
                     if (passwordsMatch) {
-                        console.log(`[AUTH] Login exitoso para: ${email}`);
+                        console.log(`[AUTH] Login exitoso: ${email}`);
                         return user;
                     } else {
-                        console.log(`[AUTH] Password incorrecto para: ${email}`);
+                        console.log(`[AUTH] Login fallido: Contraseña incorrecta para ${email}`);
                     }
                 }
 
-                console.log("[AUTH] Credenciales inválidas o incompletas");
+                console.log("[AUTH] Intentó ingresar con credenciales inválidas");
                 return null;
             },
         }),
