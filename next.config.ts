@@ -14,6 +14,11 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['gururesto.guruweb.com.ar', 'www.gururesto.guruweb.com.ar'],
+    },
+  },
 };
 
 export default nextConfig;
