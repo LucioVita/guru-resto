@@ -25,36 +25,39 @@ async function getUser(email: string) {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     ...authConfig,
-    secret: process.env.AUTH_SECRET,
-    trustHost: true,
-    debug: process.env.NODE_ENV !== 'production', // Cambiar a true si necesitas ver todo en consola
+    debug: true,
     providers: [
         Credentials({
             async authorize(credentials) {
-                const parsedCredentials = z
-                    .object({ email: z.string().email(), password: z.string().min(6) })
-                    .safeParse(credentials);
+                try {
+                    const parsedCredentials = z
+                        .object({ email: z.string().email(), password: z.string().min(6) })
+                        .safeParse(credentials);
 
-                if (parsedCredentials.success) {
-                    const { email, password } = parsedCredentials.data;
-                    const user = await getUser(email);
+                    if (parsedCredentials.success) {
+                        const { email, password } = parsedCredentials.data;
+                        const user = await getUser(email);
 
-                    if (!user) {
-                        console.log(`[AUTH] Login fallido: Usuario no encontrado (${email})`);
-                        return null;
+                        if (!user) {
+                            console.log(`[AUTH] Login fallido: Usuario no encontrado (${email})`);
+                            return null;
+                        }
+
+                        const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
+                        if (passwordsMatch) {
+                            console.log(`[AUTH] Login exitoso: ${email}`);
+                            return user;
+                        } else {
+                            console.log(`[AUTH] Login fallido: Contraseña incorrecta para ${email}`);
+                        }
                     }
 
-                    const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
-                    if (passwordsMatch) {
-                        console.log(`[AUTH] Login exitoso: ${email}`);
-                        return user;
-                    } else {
-                        console.log(`[AUTH] Login fallido: Contraseña incorrecta para ${email}`);
-                    }
+                    console.log("[AUTH] Intentó ingresar con credenciales inválidas");
+                    return null;
+                } catch (error) {
+                    console.error("[AUTH] Error CRÍTICO durante authorize:", error);
+                    return null;
                 }
-
-                console.log("[AUTH] Intentó ingresar con credenciales inválidas");
-                return null;
             },
         }),
     ],
