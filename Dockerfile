@@ -36,9 +36,13 @@ RUN adduser --system --uid 1001 nextjs
 # Copiar archivos públicos
 COPY --from=builder /app/public ./public
 
+
+
 # Copiar standalone build
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder /app/docker-entrypoint.js ./docker-entrypoint.js
+
 
 USER nextjs
 
@@ -47,5 +51,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Comando para ejecutar la aplicación
-CMD ["node", "server.js"]
+# Comando para ejecutar la aplicación usando nuestro entrypoint dedicado
+CMD ["node", "docker-entrypoint.js"]

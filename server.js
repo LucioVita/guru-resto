@@ -1,22 +1,94 @@
+const { createServer } = require('http');
+const { parse } = require('url');
+const next = require('next');
+const fs = require('fs');
 const path = require('path');
 
-// Configuración de Hostinger para Node.js
-process.env.PORT = process.env.PORT || 3000;
-process.env.HOSTNAME = process.env.HOSTNAME || '0.0.0.0';
+// --- SISTEMA DE DIAGNÓSTICO PARA HOSTINGER ---
+const logFile = path.join(__dirname, 'server_debug.log');
 
-// Importante: Cargar las variables de entorno si estamos en un contexto donde no se cargan automáticamente
-// require('dotenv').config();
-
-console.log('Iniciando servidor de Next.js standalone...');
-
-// Ruta al servidor generado por Next.js standalone
-const standaloneServerPath = path.join(__dirname, '.next', 'standalone', 'server.js');
-
-try {
-    // Requerir el servidor generado
-    require(standaloneServerPath);
-} catch (error) {
-    console.error('Error al iniciar el servidor standalone. ¿Corriste "npm run build"?');
-    console.error(error);
-    process.exit(1);
+function log(msg) {
+    const timestamp = new Date().toISOString();
+    const message = `[${timestamp}] ${msg}`;
+    console.log(message);
+    try {
+        fs.appendFileSync(logFile, message + '\n');
+    } catch (e) {
+        // Ignorar error de escritura de log
+    }
 }
+
+log('>>> ARRANQUE DEL SERVIDOR NODE.JS (Hostinger) <<<');
+
+// 1. CARGA DE VARIABLES .ENV (Manual, para asegurar lectura)
+try {
+    const envPath = path.join(__dirname, '.env');
+    if (fs.existsSync(envPath)) {
+        log(`Leyendo archivo .env desde: ${envPath}`);
+        const envContent = fs.readFileSync(envPath, 'utf8');
+
+        envContent.split('\n').forEach(line => {
+            let cleanLine = line.trim();
+            if (!cleanLine || cleanLine.startsWith('#')) return;
+
+            const separatorIndex = cleanLine.indexOf('=');
+            if (separatorIndex > 0) {
+                const key = cleanLine.substring(0, separatorIndex).trim();
+                let value = cleanLine.substring(separatorIndex + 1).trim();
+
+                // Remover comillas envolventes si las hay
+                if ((value.startsWith('"') && value.endsWith('"')) ||
+                    (value.startsWith("'") && value.endsWith("'"))) {
+                    value = value.slice(1, -1);
+                }
+
+                // Solo definir si no existe ya en el proceso (Hostinger manda prioridad a sus vars)
+                if (!process.env[key]) {
+                    process.env[key] = value;
+                }
+            }
+        });
+        log('Variables .env procesadas. Check: DATABASE_URL=' + (process.env.DATABASE_URL ? 'OK' : 'MISSING'));
+    }
+} catch (error) {
+    log(`ERROR leyendo .env: ${error.message}`);
+}
+
+// 2. CONFIGURACIÓN NEXT.JS
+const dev = process.env.NODE_ENV !== 'production';
+const hostname = '0.0.0.0';
+const port = process.env.PORT || 3000;
+
+log(`Configurando Next.js en modo: ${dev ? 'development' : 'production'}`);
+log(`Puerto asignado: ${port}`);
+
+// Iniciar la app de Next
+const app = next({ dev, hostname, port });
+const handle = app.getRequestHandler();
+
+app.prepare().then(() => {
+    createServer(async (req, res) => {
+        try {
+            const parsedUrl = parse(req.url, true);
+            await handle(req, res, parsedUrl);
+        } catch (err) {
+            console.error('Error occurred handling', req.url, err);
+            log(`ERROR request: ${err.message}`);
+            res.statusCode = 500;
+            res.end('Internal Server Error');
+        }
+    })
+        .once('error', (err) => {
+            console.error(err);
+            log(`ERROR CRÍTICO DEL SERVIDOR: ${err.message}`);
+            process.exit(1);
+        })
+        .listen(port, () => {
+            log(`> Servidor listo en http://${hostname}:${port}`);
+            console.log(`> Ready on http://${hostname}:${port}`);
+        });
+}).catch((ex) => {
+    console.error(ex.stack);
+    log(`ERROR al preparar Next.js: ${ex.stack}`);
+    process.exit(1);
+});

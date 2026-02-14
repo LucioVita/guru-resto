@@ -6,8 +6,8 @@ const nextConfig = {
   // En Next.js 16, Turbopack se deshabilita usando el flag --webpack en los scripts de package.json
   // turbopack: false,
   // Standalone output para Docker deployment
-  output: 'standalone',
-  outputFileTracingRoot: path.join(__dirname),
+  // output: 'standalone',
+  // outputFileTracingRoot: path.join(__dirname),
   typescript: {
     ignoreBuildErrors: true,
   },
