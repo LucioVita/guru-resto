@@ -18,6 +18,7 @@ export const authConfig = {
         },
     },
     providers: [],
-    secret: process.env.AUTH_SECRET,
+    // Forzamos el secreto si process.env falla en Hostinger
+    secret: process.env.AUTH_SECRET || "supersecretchangeme123!",
     trustHost: true,
 } satisfies NextAuthConfig;
