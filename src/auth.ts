@@ -9,10 +9,16 @@ import { authConfig } from "./auth.config";
 
 async function getUser(email: string) {
     try {
+        console.log(`[AUTH] Intentando buscar usuario: ${email}`);
         const result = await db.select().from(users).where(eq(users.email, email));
+        if (result.length === 0) {
+            console.log(`[AUTH] Usuario no encontrado: ${email}`);
+            return null;
+        }
+        console.log(`[AUTH] Usuario encontrado: ${email}`);
         return result[0];
     } catch (error) {
-        console.error('Failed to fetch user:', error);
+        console.error('[AUTH] Error en getUser:', error);
         throw new Error('Failed to fetch user.');
     }
 }
@@ -32,26 +38,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     if (!user) return null;
 
                     const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
-                    if (passwordsMatch) return user;
+                    if (passwordsMatch) {
+                        console.log(`[AUTH] Login exitoso para: ${email}`);
+                        return user;
+                    } else {
+                        console.log(`[AUTH] Password incorrecto para: ${email}`);
+                    }
                 }
 
-                console.log("Invalid credentials");
+                console.log("[AUTH] Credenciales inválidas o incompletas");
                 return null;
             },
         }),
     ],
     callbacks: {
+        ...authConfig.callbacks,
         async jwt({ token, user }) {
             if (user) {
-                token.role = user.role;
-                token.businessId = user.businessId;
+                token.role = (user as any).role;
+                token.businessId = (user as any).businessId;
             }
             return token;
         },
         async session({ session, token }) {
             if (token.sub && session.user) {
                 session.user.id = token.sub;
-                session.user.role = token.role as any; // Cast temporarily
+                session.user.role = token.role as any;
                 session.user.businessId = token.businessId as any;
             }
             return session;

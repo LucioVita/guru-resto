@@ -42,13 +42,20 @@ try {
                     value = value.slice(1, -1);
                 }
 
-                // Solo definir si no existe ya en el proceso (Hostinger manda prioridad a sus vars)
-                if (!process.env[key]) {
+                // Definir si no existe o está vacío (Hostinger prioridad si están cargadas)
+                if (!process.env[key] || process.env[key].trim() === "") {
                     process.env[key] = value;
                 }
             }
         });
-        log('Variables .env procesadas. Check: DATABASE_URL=' + (process.env.DATABASE_URL ? 'OK' : 'MISSING'));
+        log('Variables .env procesadas.');
+        log('Check DATABASE_URL: ' + (process.env.DATABASE_URL ? 'CONFIGURADA' : 'FALTA'));
+        log('Check AUTH_SECRET: ' + (process.env.AUTH_SECRET ? 'CONFIGURADA' : 'FALTA'));
+        log('Check AUTH_URL: ' + (process.env.AUTH_URL || 'NO DEFINIDA (Usando default)'));
+        log('Check AUTH_TRUST_HOST: ' + (process.env.AUTH_TRUST_HOST || 'FALTA'));
+        log('Check NODE_ENV: ' + (process.env.NODE_ENV || 'FALTA (Defaulting to production or development)'));
+    } else {
+        log('Archivo .env no encontrado. Usando variables del sistema.');
     }
 } catch (error) {
     log(`ERROR leyendo .env: ${error.message}`);
