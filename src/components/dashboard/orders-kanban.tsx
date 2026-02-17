@@ -151,10 +151,10 @@ export default function OrdersKanban({ initialOrders }: { initialOrders: any[] }
                     </div>
 
                     <DragOverlay>
-                        {activeId ? (
+                        {activeId && orders.find((o) => o.id === activeId) ? (
                             <div className="rotate-3 scale-105 transition-transform">
                                 <KanbanCard
-                                    order={orders.find((o) => o.id === activeId)}
+                                    order={orders.find((o) => o.id === activeId)!}
                                     isOverlay
                                 />
                             </div>
