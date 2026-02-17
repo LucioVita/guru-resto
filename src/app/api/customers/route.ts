@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { verifyApiKey } from "@/lib/api-auth";
 import { db } from "@/db";
 import { apiKeys, customers } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -15,26 +16,14 @@ export async function POST(req: NextRequest) {
     try {
         // 1. Authentication (x-api-key)
         const apiKeyHeader = req.headers.get("x-api-key");
+        const businessId = await verifyApiKey(apiKeyHeader);
 
-        if (!apiKeyHeader) {
+        if (!businessId) {
             return NextResponse.json(
-                { error: "Unauthorized: Missing x-api-key header" },
+                { error: "Unauthorized: Invalid or missing element x-api-key" },
                 { status: 401 }
             );
         }
-
-        const validKey = await db.query.apiKeys.findFirst({
-            where: and(eq(apiKeys.key, apiKeyHeader), eq(apiKeys.isActive, true)),
-        });
-
-        if (!validKey) {
-            return NextResponse.json(
-                { error: "Unauthorized: Invalid or inactive API Key" },
-                { status: 401 }
-            );
-        }
-
-        const businessId = validKey.businessId;
 
         // 2. Validate Body
         const body = await req.json();
