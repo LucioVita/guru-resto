@@ -133,7 +133,7 @@ export function KanbanCard({ order, isOverlay, onStatusChange }: { order: any; i
                         <div className="flex items-center gap-1 text-[11px] font-medium text-gray-400">
                             <Clock className="h-3 w-3" />
                             <span suppressHydrationWarning>
-                                {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {order.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                             </span>
                         </div>
                         <div className="text-sm font-bold text-gray-900">${order.total}</div>
