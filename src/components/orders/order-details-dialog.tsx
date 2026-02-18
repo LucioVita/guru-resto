@@ -10,11 +10,35 @@ import {
 import { Button } from "@/components/ui/button";
 import { Printer, FileText } from "lucide-react";
 import { usePrint } from "@/hooks/use-print";
+import { useState } from "react";
+import { confirmOrder } from "@/app/actions/orders";
 
 export function OrderDetailsDialog({ order, open, onOpenChange }: { order: any; open: boolean; onOpenChange: (open: boolean) => void }) {
     const { printOrder } = usePrint();
 
+    const [timeEstimate, setTimeEstimate] = useState<number>(30);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     if (!order) return null;
+
+    const handleConfirm = async () => {
+        setIsSubmitting(true);
+        try {
+            // Dynamically import the action or assume it's available
+            const actionResult = await confirmOrder(order.id, timeEstimate);
+            if (actionResult.success) {
+                onOpenChange(false);
+                // Ideally show toast or success message
+            } else {
+                console.error("Error confirming order:", actionResult.error);
+                // Ideally show error message
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -60,7 +84,36 @@ export function OrderDetailsDialog({ order, open, onOpenChange }: { order: any; 
                         </table>
                     </div>
 
-                    <div className="flex gap-2 justify-end pt-2">
+                    {order.status === 'pending' && (
+                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 shadow-sm">
+                            <h4 className="font-semibold text-blue-900 mb-2 text-sm">Confirmar Pedido</h4>
+                            <div className="flex flex-col gap-2">
+                                <label className="text-xs text-blue-800">Tiempo de Demora (minutos):</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="5"
+                                        className="border rounded px-2 py-1 flex-1 text-sm"
+                                        value={timeEstimate}
+                                        onChange={(e) => setTimeEstimate(Number(e.target.value))}
+                                    />
+                                    <Button
+                                        onClick={handleConfirm}
+                                        disabled={isSubmitting}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                                    >
+                                        {isSubmitting ? 'Confirmando...' : 'Confirmar y Notificar'}
+                                    </Button>
+                                </div>
+                                <p className="text-[10px] text-blue-600/80 mt-1">
+                                    Se enviará una notificación automática al cliente con el tiempo de espera.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex gap-2 justify-end pt-2 border-t border-gray-100 mt-4">
                         <Button
                             variant="outline"
                             className="gap-2"

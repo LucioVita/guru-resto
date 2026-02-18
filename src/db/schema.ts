@@ -74,6 +74,7 @@ export const orders = mysqlTable("orders", {
     afipInvoicePuntoVenta: int("afip_invoice_punto_venta"),
     afipInvoicedAt: timestamp("afip_invoiced_at"),
     source: varchar("source", { length: 50 }).default("web"), // web, whatsapp, phone, etc.
+    estimatedWaitTime: int("estimated_wait_time"), // in minutes
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
