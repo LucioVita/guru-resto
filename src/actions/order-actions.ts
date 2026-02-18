@@ -13,6 +13,31 @@ import { desc } from "drizzle-orm";
 // Webhook fijo de n8n para notificaciones automáticas al cliente
 const N8N_STATUS_WEBHOOK = "https://n8n.resto.guruweb.com.ar/webhook/cambios-de-estado";
 
+export async function confirmOrder(orderId: string, minutes: number) {
+    const session = await auth();
+    if (!session || !session.user.businessId) return { success: false, error: "Unauthorized" };
+
+    try {
+        // 1. Actualizar el pedido
+        await db.update(orders)
+            .set({
+                status: 'preparation',
+                estimatedWaitTime: minutes,
+                updatedAt: new Date()
+            })
+            .where(and(eq(orders.id, orderId), eq(orders.businessId, session.user.businessId)));
+
+        // 2. Disparar notificación (usando la lógica de updateOrderStatusAction)
+        await updateOrderStatusAction(orderId, 'preparation', true, 'order_confirmed');
+
+        revalidatePath('/dashboard');
+        return { success: true };
+    } catch (error) {
+        console.error("Error confirming order:", error);
+        return { success: false, error: "Failed to confirm order" };
+    }
+}
+
 
 export async function getLiveOrders() {
     const session = await auth();
@@ -232,7 +257,7 @@ export async function createOrderAction(data: {
     return newOrder;
 }
 
-export async function updateOrderStatusAction(orderId: string, status: any) {
+export async function updateOrderStatusAction(orderId: string, status: any, notify: boolean = true, eventName: string = 'order.status_updated') {
     const session = await auth();
     if (!session || !session.user.businessId) throw new Error("Unauthorized");
 
@@ -254,7 +279,7 @@ export async function updateOrderStatusAction(orderId: string, status: any) {
         .leftJoin(businesses, eq(orders.businessId, businesses.id))
         .where(eq(orders.id, orderId));
 
-    if (orderWithCustomer.length > 0) {
+    if (orderWithCustomer.length > 0 && notify) {
         const data = orderWithCustomer[0];
         const business = data.business;
 
@@ -264,7 +289,7 @@ export async function updateOrderStatusAction(orderId: string, status: any) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    event: 'order.status_updated',
+                    event: eventName,
                     orderId,
                     status,
                     phone: data.customer?.phone || '',
@@ -280,7 +305,7 @@ export async function updateOrderStatusAction(orderId: string, status: any) {
         if (business?.webhookStatusUrl) {
             try {
                 await sendWebhook(business.webhookStatusUrl, {
-                    event: 'order.status_updated',
+                    event: eventName,
                     orderId,
                     status,
                     phone: data.customer?.phone || '',

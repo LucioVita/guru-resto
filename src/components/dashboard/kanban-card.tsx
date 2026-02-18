@@ -8,11 +8,11 @@ import { Clock, Printer, FileText, ChevronRight, ClipboardList, Utensils, Trash2
 import { Button } from "@/components/ui/button";
 import { usePrint } from "@/hooks/use-print";
 import { useState } from "react";
-import { confirmOrder } from "@/app/actions/orders";
+import { confirmOrder } from "@/actions/order-actions";
 import { toast } from "sonner";
 import { CheckCircle2 } from "lucide-react";
 
-export function KanbanCard({ order, isOverlay, onStatusChange }: { order: any; isOverlay?: boolean; onStatusChange?: (id: string, status: string) => void }) {
+export function KanbanCard({ order, isOverlay, onStatusChange }: { order: any; isOverlay?: boolean; onStatusChange?: (id: string, status: string, notify?: boolean) => void }) {
     const { printOrder } = usePrint();
     const [waitMinutes, setWaitMinutes] = useState<number>(30);
     const [isConfirming, setIsConfirming] = useState(false);
@@ -48,7 +48,8 @@ export function KanbanCard({ order, isOverlay, onStatusChange }: { order: any; i
             const result = await confirmOrder(order.id, waitMinutes);
             if (result.success) {
                 toast.success(`✅ Pedido confirmado — ${waitMinutes} min notificados`);
-                onStatusChange?.(order.id, 'preparation');
+                // Llamamos a onStatusChange con notify: false porque confirmOrder ya se encargó de la notificación
+                onStatusChange?.(order.id, 'preparation', false);
             } else {
                 toast.error("Error: " + result.error);
             }

@@ -96,12 +96,71 @@ export async function POST(req: NextRequest) {
     }
 }
 
+const updateCustomerSchema = z.object({
+    id: z.string().uuid(),
+    name: z.string().optional(),
+    phone: z.string().optional(),
+    address: z.string().optional(),
+    email: z.string().email().optional().or(z.literal("")),
+    status: z.enum(["active", "waiting_address", "archived"]).optional(),
+    notes: z.string().optional(),
+});
+
+export async function PATCH(req: NextRequest) {
+    try {
+        const apiKeyHeader = req.headers.get("x-api-key");
+        const businessId = await verifyApiKey(apiKeyHeader);
+
+        if (!businessId) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const body = await req.json();
+        const validation = updateCustomerSchema.safeParse(body);
+
+        if (!validation.success) {
+            return NextResponse.json(
+                { error: "Validation Error", details: validation.error.format() },
+                { status: 400 }
+            );
+        }
+
+        const { id, ...updateData } = validation.data;
+
+        // Verify customer belongs to the business
+        const existing = await db.query.customers.findFirst({
+            where: and(
+                eq(customers.id, id),
+                eq(customers.businessId, businessId)
+            )
+        });
+
+        if (!existing) {
+            return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+        }
+
+        // Update
+        await db.update(customers)
+            .set(updateData)
+            .where(eq(customers.id, id));
+
+        return NextResponse.json({
+            success: true,
+            message: "Customer updated successfully"
+        });
+
+    } catch (error) {
+        console.error("API Customer PATCH Error:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    }
+}
+
 export async function OPTIONS(req: NextRequest) {
     return new NextResponse(null, {
         status: 200,
         headers: {
             "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Methods": "POST, PATCH, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type, x-api-key",
         },
     });

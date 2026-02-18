@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Printer, FileText } from "lucide-react";
 import { usePrint } from "@/hooks/use-print";
 import { useState } from "react";
-import { confirmOrder } from "@/app/actions/orders";
+import { confirmOrder } from "@/actions/order-actions";
 
 export function OrderDetailsDialog({ order, open, onOpenChange }: { order: any; open: boolean; onOpenChange: (open: boolean) => void }) {
     const { printOrder } = usePrint();

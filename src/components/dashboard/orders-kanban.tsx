@@ -59,7 +59,7 @@ export default function OrdersKanban({ initialOrders }: { initialOrders: any[] }
         setActiveId(event.active.id as string);
     };
 
-    const handleStatusChange = async (orderId: string, newStatus: string) => {
+    const handleStatusChange = async (orderId: string, newStatus: string, notify: boolean = true) => {
         const activeOrder = orders.find(o => o.id === orderId);
         if (!activeOrder || activeOrder.status === newStatus) return;
 
@@ -67,7 +67,7 @@ export default function OrdersKanban({ initialOrders }: { initialOrders: any[] }
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
 
         try {
-            await updateOrderStatusAction(orderId, newStatus as any);
+            await updateOrderStatusAction(orderId, newStatus as any, notify);
 
             // If moved to delivered/completed, we might want to refresh fully
             if (newStatus === 'delivered') {
