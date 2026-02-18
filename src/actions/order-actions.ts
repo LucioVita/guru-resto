@@ -238,14 +238,30 @@ export async function updateOrderStatusAction(orderId: string, status: any) {
 
     revalidatePath("/dashboard");
 
-    // Trigger Webhook
-    const [business] = await db.select().from(businesses).where(eq(businesses.id, session.user.businessId));
+    // Trigger Webhook with extra data (phone and wait time)
+    const orderWithCustomer = await db
+        .select({
+            order: orders,
+            customer: customers,
+            business: businesses
+        })
+        .from(orders)
+        .leftJoin(customers, eq(orders.customerId, customers.id))
+        .leftJoin(businesses, eq(orders.businessId, businesses.id))
+        .where(eq(orders.id, orderId));
 
-    if (business?.webhookStatusUrl) {
-        await sendWebhook(business.webhookStatusUrl, {
-            event: 'order.status_updated',
-            orderId,
-            status
-        });
+    if (orderWithCustomer.length > 0) {
+        const data = orderWithCustomer[0];
+        const business = data.business;
+
+        if (business?.webhookStatusUrl) {
+            await sendWebhook(business.webhookStatusUrl, {
+                event: 'order.status_updated',
+                orderId,
+                status,
+                phone: data.customer?.phone || '',
+                estimatedWaitTime: data.order.estimatedWaitTime || null
+            });
+        }
     }
 }
