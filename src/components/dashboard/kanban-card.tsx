@@ -4,14 +4,20 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { Clock, Printer, FileText, ChevronRight, MoreVertical, ClipboardList, Utensils, Trash2 } from "lucide-react";
+import { Clock, Printer, FileText, ChevronRight, MoreVertical, ClipboardList, Utensils, Trash2, Timer, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePrint } from "@/hooks/use-print";
+import { useState } from "react";
+import { confirmOrder } from "@/app/actions/orders";
+import { toast } from "sonner";
 
 import { CheckCircle2 } from "lucide-react";
 
 export function KanbanCard({ order, isOverlay, onStatusChange }: { order: any; isOverlay?: boolean; onStatusChange?: (id: string, status: string) => void }) {
     const { printOrder } = usePrint();
+    const [waitMinutes, setWaitMinutes] = useState<number>(30);
+    const [isConfirming, setIsConfirming] = useState(false);
+
     const {
         attributes,
         listeners,
@@ -50,6 +56,26 @@ export function KanbanCard({ order, isOverlay, onStatusChange }: { order: any; i
             case 'preparation': return 'En Cocina';
             case 'ready': return 'Listo';
             default: return status;
+        }
+    };
+
+    const handleConfirm = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (isConfirming) return;
+        setIsConfirming(true);
+        try {
+            const result = await confirmOrder(order.id, waitMinutes);
+            if (result.success) {
+                toast.success(`✅ Pedido confirmado — ${waitMinutes} min notificados al cliente`);
+                // Actualizar estado localmente en el kanban
+                onStatusChange?.(order.id, 'preparation');
+            } else {
+                toast.error("Error al confirmar el pedido: " + result.error);
+            }
+        } catch (err) {
+            toast.error("Error inesperado al confirmar el pedido");
+        } finally {
+            setIsConfirming(false);
         }
     };
 
@@ -155,6 +181,52 @@ export function KanbanCard({ order, isOverlay, onStatusChange }: { order: any; i
                         )}
                     </div>
                 </div>
+
+                {/* ── Campo de tiempo de demora (solo para pedidos pendientes) ── */}
+                {order.status === 'pending' && (
+                    <div
+                        className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 space-y-1.5"
+                        onPointerDown={(e) => e.stopPropagation()}
+                    >
+                        <p className="text-[10px] font-semibold text-amber-700 uppercase tracking-wide flex items-center gap-1">
+                            <Timer className="h-3 w-3" />
+                            Tiempo de demora
+                        </p>
+                        <div className="flex gap-1.5 items-center">
+                            <div className="relative flex-1">
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={180}
+                                    step={5}
+                                    value={waitMinutes}
+                                    onChange={(e) => setWaitMinutes(Math.max(1, Number(e.target.value)))}
+                                    className="w-full border border-amber-300 bg-white rounded-md px-2 py-1.5 text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent pr-8"
+                                    placeholder="30"
+                                />
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-medium pointer-events-none">min</span>
+                            </div>
+                            <Button
+                                size="sm"
+                                disabled={isConfirming}
+                                onClick={handleConfirm}
+                                className="h-8 px-3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs gap-1 shadow-sm shadow-amber-200 transition-all"
+                            >
+                                {isConfirming ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                    <>
+                                        <Send className="h-3 w-3" />
+                                        Confirmar
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                        <p className="text-[9px] text-amber-600/80 leading-tight">
+                            Se notificará al cliente automáticamente
+                        </p>
+                    </div>
+                )}
 
                 <div className="flex justify-between items-center pt-2 border-t border-gray-100" onPointerDown={(e) => e.stopPropagation()}>
                     <div className="flex gap-1">

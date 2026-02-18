@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyApiKey } from "@/lib/api-auth";
 import { db } from "@/db";
-import { apiKeys, customers, orders, orderItems } from "@/db/schema";
+import { apiKeys, customers, orders, orderItems, businesses } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+
+// Webhook fijo de n8n para cambios de estado y notificaciones al cliente
+const N8N_STATUS_WEBHOOK = "https://n8n.resto.guruweb.com.ar/webhook/cambios-de-estado";
 
 // Schema Validation for Incoming Order
 const orderSchema = z.object({
@@ -113,6 +116,46 @@ export async function POST(req: NextRequest) {
                 notes: item.notes || "",
             }));
             await db.insert(orderItems).values(orderItemsValues);
+        }
+
+        // d. Fetch customer data for the initial notification (using joins for MariaDB compatibility)
+        const orderRows = await db
+            .select({
+                order: orders,
+                customer: customers
+            })
+            .from(orders)
+            .leftJoin(customers, eq(orders.customerId, customers.id))
+            .where(eq(orders.id, orderId));
+
+        const orderData = orderRows[0];
+
+        // e. Send initial automatic message to customer via n8n webhook
+        // This tells the customer: "ok, ya te digo cuanto va a demorar"
+        try {
+            const initialPayload = {
+                event: 'order_received',
+                orderId,
+                customer: {
+                    name: orderData?.customer?.name || customer.name,
+                    phone: orderData?.customer?.phone || customer.phone,
+                    address: orderData?.customer?.address || customer.address,
+                },
+                items: items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
+                total,
+                status: 'pending',
+                estimatedWaitTime: null,
+                message: 'ok, ya te digo cuanto va a demorar',
+            };
+
+            await fetch(N8N_STATUS_WEBHOOK, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(initialPayload),
+            });
+        } catch (webhookError) {
+            // No fallamos el pedido si el webhook falla
+            console.error("[Webhook] Error al enviar notificación inicial:", webhookError);
         }
 
         return NextResponse.json({
