@@ -10,6 +10,10 @@ import { businesses } from "@/db/schema";
 import { createElectronicInvoice } from "@/lib/afip";
 import { desc } from "drizzle-orm";
 
+// Webhook fijo de n8n para notificaciones automáticas al cliente
+const N8N_STATUS_WEBHOOK = "https://n8n.resto.guruweb.com.ar/webhook/cambios-de-estado";
+
+
 export async function getLiveOrders() {
     const session = await auth();
     if (!session || !session.user.businessId) return [];
@@ -254,14 +258,37 @@ export async function updateOrderStatusAction(orderId: string, status: any) {
         const data = orderWithCustomer[0];
         const business = data.business;
 
-        if (business?.webhookStatusUrl) {
-            await sendWebhook(business.webhookStatusUrl, {
-                event: 'order.status_updated',
-                orderId,
-                status,
-                phone: data.customer?.phone || '',
-                estimatedWaitTime: data.order.estimatedWaitTime || null
+        // 1. Enviar al webhook fijo de n8n (para WhatsApp/Notificaciones)
+        try {
+            await fetch(N8N_STATUS_WEBHOOK, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event: 'order.status_updated',
+                    orderId,
+                    status,
+                    phone: data.customer?.phone || '',
+                    name: data.customer?.name || '',
+                    estimatedWaitTime: data.order.estimatedWaitTime || null
+                }),
             });
+        } catch (e) {
+            console.error("[Webhook Fixed] Error:", e);
+        }
+
+        // 2. Enviar al webhook configurable del negocio (si existe)
+        if (business?.webhookStatusUrl) {
+            try {
+                await sendWebhook(business.webhookStatusUrl, {
+                    event: 'order.status_updated',
+                    orderId,
+                    status,
+                    phone: data.customer?.phone || '',
+                    estimatedWaitTime: data.order.estimatedWaitTime || null
+                });
+            } catch (e) {
+                console.error("[Webhook Business] Error:", e);
+            }
         }
     }
 }
