@@ -2,10 +2,11 @@
 
 import { db } from "@/db";
 import { cashRegisters, orders } from "@/db/schema";
-import { eq, and, isNull, sum, gte } from "drizzle-orm";
+import { eq, and, isNull, sum, gte, desc, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { businesses, orderItems, products as productsTable } from "@/db/schema";
 
 export async function openCajaAction(initialAmount: string) {
     const session = await auth();
@@ -31,7 +32,7 @@ export async function openCajaAction(initialAmount: string) {
     revalidatePath("/dashboard/cash-register");
 }
 
-function generateCSV(orders: any[], openingTime: Date, closingTime: Date, initialAmount: string, finalAmount: string): string {
+function generateCSV(orders: any[], items: any[], openingTime: Date, closingTime: Date, initialAmount: string, finalAmount: string): string {
     const headers = [
         'Fecha Pedido',
         'ID Pedido',
@@ -47,15 +48,32 @@ function generateCSV(orders: any[], openingTime: Date, closingTime: Date, initia
         new Date(order.createdAt).toLocaleString('es-AR'),
         order.id.slice(-8),
         order.customer?.name || 'Sin nombre',
-        `$${Math.round(parseFloat(order.total))}`,
+        `${Math.round(parseFloat(order.total))}`,
         order.paymentMethod === 'cash' ? 'Efectivo' : order.paymentMethod === 'card' ? 'Tarjeta' : 'Transferencia',
         order.status === 'delivered' ? 'Entregado' : order.status === 'cancelled' ? 'Cancelado' : 'Pendiente',
         order.afipCae || 'N/A',
         order.afipInvoiceNumber || 'N/A'
     ]);
 
-    // Add summary rows
+    // Summaries
     const totalSales = orders.reduce((sum, order) => sum + parseFloat(order.total), 0);
+
+    // Paymethod Methods Summary
+    const byPayment: Record<string, number> = {};
+    orders.forEach(o => {
+        const method = o.paymentMethod || 'other';
+        byPayment[method] = (byPayment[method] || 0) + parseFloat(o.total);
+    });
+
+    // Product Summary
+    const byProduct: Record<string, { qty: number; total: number }> = {};
+    items.forEach(i => {
+        const name = i.name || 'Producto Desconocido';
+        if (!byProduct[name]) byProduct[name] = { qty: 0, total: 0 };
+        byProduct[name].qty += i.quantity;
+        byProduct[name].total += parseFloat(i.price) * i.quantity;
+    });
+
     rows.push([]);
     rows.push(['RESUMEN DE CAJA', '', '', '', '', '', '', '']);
     rows.push(['Apertura', new Date(openingTime).toLocaleString('es-AR'), '', '', '', '', '', '']);
@@ -66,9 +84,24 @@ function generateCSV(orders: any[], openingTime: Date, closingTime: Date, initia
     rows.push(['Monto Final Real', `$${Math.round(parseFloat(finalAmount))}`, '', '', '', '', '', '']);
     rows.push(['Diferencia', `$${Math.round(parseFloat(finalAmount) - (parseFloat(initialAmount) + totalSales))}`, '', '', '', '', '', '']);
 
+    rows.push([]);
+    rows.push(['VENTAS POR MÉTODO DE PAGO', '', '', '', '', '', '', '']);
+    Object.entries(byPayment).forEach(([method, total]) => {
+        const label = method === 'cash' ? 'Efectivo' : method === 'card' ? 'Tarjeta' : method === 'transfer' ? 'Transferencia' : method;
+        rows.push([label, `$${Math.round(total)}`, '', '', '', '', '', '']);
+    });
+
+    rows.push([]);
+    rows.push(['VENTAS POR PRODUCTO', 'Cantidad', 'Total', '', '', '', '', '']);
+    Object.entries(byProduct)
+        .sort((a, b) => b[1].total - a[1].total)
+        .forEach(([name, data]) => {
+            rows.push([name, data.qty.toString(), `$${Math.round(data.total)}`, '', '', '', '', '']);
+        });
+
     const csvContent = [
         headers.join(','),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+        ...rows.map(row => row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(','))
     ].join('\n');
 
     return csvContent;
@@ -98,6 +131,12 @@ export async function closeCajaAction(data: { actualAmount: string; notes?: stri
         },
     });
 
+    // Get items for these orders
+    let dailyItems: any[] = [];
+    if (dailyOrders.length > 0) {
+        dailyItems = await db.select().from(orderItems).where(inArray(orderItems.orderId, dailyOrders.map(o => o.id)));
+    }
+
     // Calculate total sales since opening
     const totalSales = dailyOrders.reduce((sum, order) => sum + parseFloat(order.total), 0);
     const finalCalculated = (parseFloat(openCaja.initialAmount) + totalSales).toString();
@@ -118,23 +157,17 @@ export async function closeCajaAction(data: { actualAmount: string; notes?: stri
     // Generate CSV
     const csvContent = generateCSV(
         dailyOrders,
+        dailyItems,
         openCaja.openingTime,
         closingTime,
         openCaja.initialAmount,
         data.actualAmount
     );
 
-    // Create a data URL for download
     const csvBase64 = Buffer.from(csvContent, 'utf-8').toString('base64');
-    const downloadUrl = `data:text/csv;base64,${csvBase64}`;
-
-    // Store CSV in a temporary location or trigger download
-    // For now, we'll redirect with the CSV data
-    const fileName = `ventas_${new Date().toISOString().split('T')[0]}_${openCaja.id.slice(-8)}.csv`;
+    const fileName = `resumen_caja_${new Date().toISOString().split('T')[0]}.csv`;
 
     revalidatePath("/dashboard/cash-register");
-
-    // Redirect to a download page with CSV data
     redirect(`/dashboard/cash-register/download?data=${encodeURIComponent(csvBase64)}&filename=${fileName}`);
 }
 
@@ -148,6 +181,73 @@ export async function getOpenCaja() {
             eq(cashRegisters.status, "open")
         ),
     });
+}
+
+export async function getCajaHistory() {
+    const session = await auth();
+    if (!session || !session.user.businessId) return [];
+
+    return db.query.cashRegisters.findMany({
+        where: eq(cashRegisters.businessId, session.user.businessId),
+        orderBy: [desc(cashRegisters.openingTime)],
+        limit: 20
+    });
+}
+
+export async function downloadCajaReportAction(cajaId: string) {
+    const session = await auth();
+    if (!session || !session.user.businessId) throw new Error("Unauthorized");
+    // Only business_admin allowed to download history
+    if (session.user.role !== 'business_admin' && session.user.role !== 'super_admin') {
+        throw new Error("Acces restricted to administrators");
+    }
+
+    const caja = await db.query.cashRegisters.findFirst({
+        where: and(
+            eq(cashRegisters.id, cajaId),
+            eq(cashRegisters.businessId, session.user.businessId)
+        ),
+    });
+
+    if (!caja || !caja.closingTime) throw new Error("Caja session not found or not closed");
+
+    // Fetch accurate orders for that period
+    const sessionOrders = await db.query.orders.findMany({
+        where: and(
+            eq(orders.businessId, session.user.businessId),
+            gte(orders.createdAt, caja.openingTime),
+            eq(orders.status, "delivered") // Optionally only finished orders? Let's include all non-cancelled?
+            // Actually, normally we report all that were delivered/paid.
+        ),
+        with: { customer: true },
+    });
+
+    // Filtering precisely by time range if there are multiple sessions same day
+    const filteredOrders = sessionOrders.filter(o =>
+        o.createdAt &&
+        o.createdAt >= caja.openingTime &&
+        caja.closingTime &&
+        o.createdAt <= caja.closingTime
+    );
+
+    let sessionItems: any[] = [];
+    if (filteredOrders.length > 0) {
+        sessionItems = await db.select().from(orderItems).where(inArray(orderItems.orderId, filteredOrders.map(o => o.id)));
+    }
+
+    const csvContent = generateCSV(
+        filteredOrders,
+        sessionItems,
+        caja.openingTime,
+        caja.closingTime,
+        caja.initialAmount,
+        caja.finalAmountActual || "0"
+    );
+
+    const csvBase64 = Buffer.from(csvContent, 'utf-8').toString('base64');
+    const fileName = `reporte_caja_${new Date(caja.openingTime).toISOString().split('T')[0]}.csv`;
+
+    redirect(`/dashboard/cash-register/download?data=${encodeURIComponent(csvBase64)}&filename=${fileName}`);
 }
 
 export async function getCashRegisterOrders() {
@@ -173,3 +273,4 @@ export async function getCashRegisterOrders() {
         },
     });
 }
+

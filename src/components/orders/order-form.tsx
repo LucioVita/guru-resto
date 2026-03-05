@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createOrderAction } from "@/actions/order-actions";
 import { toast } from "sonner";
-import { Trash2, Plus, Minus } from "lucide-react";
+import { Trash2, Plus, Minus, Search as SearchIcon } from "lucide-react";
 
 export default function OrderForm({ products }: { products: any[] }) {
     const router = useRouter();
@@ -19,10 +19,20 @@ export default function OrderForm({ products }: { products: any[] }) {
     const [customerName, setCustomerName] = useState("");
     const [customerAddress, setCustomerAddress] = useState("");
     const [customerPhone, setCustomerPhone] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
 
     const total = useMemo(() => {
         return cart.reduce((acc, item) => acc + (parseFloat(item.price) * item.quantity), 0);
     }, [cart]);
+
+    const filteredProducts = useMemo(() => {
+        if (!searchQuery.trim()) return products;
+        const lowQuery = searchQuery.toLowerCase();
+        return products.filter(p =>
+            p.name.toLowerCase().includes(lowQuery) ||
+            p.category?.toLowerCase().includes(lowQuery)
+        );
+    }, [products, searchQuery]);
 
     const addToCart = (product: any) => {
         setCart((prev) => {
@@ -79,25 +89,45 @@ export default function OrderForm({ products }: { products: any[] }) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="md:col-span-2 space-y-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Seleccionar Productos</CardTitle>
+                <Card className="border-none shadow-xl bg-white/80 backdrop-blur-sm">
+                    <CardHeader className="pb-4">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <CardTitle className="text-xl font-black italic text-primary tracking-tighter">Productos</CardTitle>
+                            <div className="relative w-full sm:max-w-xs">
+                                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <Input
+                                    placeholder="Buscar producto..."
+                                    className="pl-9 bg-gray-50/50 border-gray-200 focus:bg-white transition-all text-sm font-medium"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {products.map((product) => (
-                                <Button
-                                    key={product.id}
-                                    variant="outline"
-                                    className="h-auto flex-col items-start p-4 gap-1 hover:border-primary"
-                                    onClick={() => addToCart(product)}
-                                    disabled={!product.isAvailable}
-                                >
-                                    <span className="font-bold w-full text-left truncate" title={product.name}>{product.name}</span>
-                                    <span className="text-sm text-gray-600 font-semibold">${Math.round(parseFloat(product.price))}</span>
-                                    {!product.isAvailable && <span className="text-[10px] text-red-500 uppercase">No disponible</span>}
-                                </Button>
-                            ))}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {filteredProducts.length === 0 ? (
+                                <div className="col-span-full py-12 text-center text-gray-400 italic">
+                                    No se encontraron productos.
+                                </div>
+                            ) : (
+                                filteredProducts.map((product) => (
+                                    <Button
+                                        key={product.id}
+                                        variant="outline"
+                                        className="h-auto flex-col items-start p-4 gap-1 hover:border-primary hover:bg-primary/5 transition-all group border-gray-100 shadow-sm"
+                                        onClick={() => addToCart(product)}
+                                        disabled={!product.isAvailable}
+                                    >
+                                        <span className="font-bold w-full text-left truncate text-gray-800 group-hover:text-primary transition-colors" title={product.name}>{product.name}</span>
+                                        <div className="flex justify-between w-full items-center">
+                                            <span className="text-sm text-primary font-black">${Math.round(parseFloat(product.price))}</span>
+                                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter bg-gray-100 px-1.5 rounded py-0.5">{product.category}</span>
+                                        </div>
+                                        {!product.isAvailable && <span className="text-[10px] text-red-500 uppercase font-black tracking-tighter">Agotado</span>}
+                                    </Button>
+                                ))
+                            )}
                         </div>
                     </CardContent>
                 </Card>
