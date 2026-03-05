@@ -12,7 +12,7 @@ import { confirmOrder } from "@/actions/order-actions";
 import { toast } from "sonner";
 import { CheckCircle2 } from "lucide-react";
 
-export function KanbanCard({ order, isOverlay, onStatusChange }: { order: any; isOverlay?: boolean; onStatusChange?: (id: string, status: string, notify?: boolean) => void }) {
+export function KanbanCard({ order, isOverlay, role, onStatusChange }: { order: any; isOverlay?: boolean; role?: string; onStatusChange?: (id: string, status: string, notify?: boolean) => void }) {
     const { printOrder } = usePrint();
     const [waitMinutes, setWaitMinutes] = useState<number>(30);
     const [isConfirming, setIsConfirming] = useState(false);
@@ -136,14 +136,16 @@ export function KanbanCard({ order, isOverlay, onStatusChange }: { order: any; i
                         <CheckCircle2 className="h-3.5 w-3.5" />
                     </Button>
                     <div className="flex-1" />
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-gray-300 hover:text-red-500 hover:bg-red-50"
-                        onClick={(e) => { e.stopPropagation(); if (confirm('¿Eliminar pedido?')) onStatusChange?.(order.id, 'cancelled'); }}
-                    >
-                        <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    {role !== 'user' && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-gray-300 hover:text-red-500 hover:bg-red-50"
+                            onClick={(e) => { e.stopPropagation(); if (confirm('¿Eliminar pedido?')) onStatusChange?.(order.id, 'cancelled'); }}
+                        >
+                            <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                    )}
                 </div>
 
                 {/* LISTA DE PRODUCTOS OPTIMIZADA */}

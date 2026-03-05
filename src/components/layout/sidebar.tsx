@@ -11,7 +11,7 @@ const items = [
     { href: "/dashboard/orders", icon: ClipboardList, label: "Pedidos" },
     { href: "/dashboard/products", icon: Package, label: "Productos" },
     { href: "/dashboard/customers", icon: Users, label: "Clientes" },
-    { href: "/dashboard/settings/afip", icon: FileText, label: "Facturación" },
+    { href: "/dashboard/settings/afip", icon: FileText, label: "Facturación", restrictedTo: ["business_admin", "super_admin"] },
     { href: "/dashboard/cash-register", icon: Calculator, label: "Caja" },
     { href: "/dashboard/settings", icon: Settings, label: "Ajustes", restrictedTo: ["super_admin"] },
 ];

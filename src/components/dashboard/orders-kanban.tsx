@@ -19,7 +19,7 @@ const STAGES = [
     { id: "ready", title: "Listos para Entregar", color: "border-green-500" },
 ];
 
-export default function OrdersKanban({ initialOrders }: { initialOrders: any[] }) {
+export default function OrdersKanban({ initialOrders, role }: { initialOrders: any[], role: string }) {
     const router = useRouter();
     const [orders, setOrders] = useState(initialOrders);
     const [activeId, setActiveId] = useState<string | null>(null);
@@ -130,6 +130,7 @@ export default function OrdersKanban({ initialOrders }: { initialOrders: any[] }
                             orders={pendingOrders}
                             count={pendingOrders.length}
                             color="bg-amber-50/50 border-amber-200"
+                            role={role}
                             onStatusChange={handleStatusChange}
                         />
                         <KanbanColumn
@@ -138,6 +139,7 @@ export default function OrdersKanban({ initialOrders }: { initialOrders: any[] }
                             orders={preparationOrders}
                             count={preparationOrders.length}
                             color="bg-blue-50/50 border-blue-200"
+                            role={role}
                             onStatusChange={handleStatusChange}
                         />
                         <KanbanColumn
@@ -146,6 +148,7 @@ export default function OrdersKanban({ initialOrders }: { initialOrders: any[] }
                             orders={readyOrders}
                             count={readyOrders.length}
                             color="bg-green-50/50 border-green-200"
+                            role={role}
                             onStatusChange={handleStatusChange}
                         />
                     </div>
@@ -155,6 +158,7 @@ export default function OrdersKanban({ initialOrders }: { initialOrders: any[] }
                             <div className="rotate-3 scale-105 transition-transform">
                                 <KanbanCard
                                     order={orders.find((o) => o.id === activeId)!}
+                                    role={role}
                                     isOverlay
                                 />
                             </div>

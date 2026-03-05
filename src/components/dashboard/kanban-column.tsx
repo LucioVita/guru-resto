@@ -10,10 +10,11 @@ interface KanbanColumnProps {
     orders: any[];
     count: number;
     color: string;
+    role: string;
     onStatusChange?: (orderId: string, newStatus: string) => void;
 }
 
-export function KanbanColumn({ id, title, orders, count, color, onStatusChange }: KanbanColumnProps) {
+export function KanbanColumn({ id, title, orders, count, color, role, onStatusChange }: KanbanColumnProps) {
     const { setNodeRef, isOver } = useDroppable({ id });
 
     return (
@@ -38,6 +39,7 @@ export function KanbanColumn({ id, title, orders, count, color, onStatusChange }
                     <KanbanCard
                         key={order.id}
                         order={order}
+                        role={role}
                         onStatusChange={onStatusChange}
                     />
                 ))}

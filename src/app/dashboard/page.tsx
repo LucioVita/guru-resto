@@ -91,7 +91,7 @@ export default async function DashboardPage() {
                     </Link>
                 </div>
 
-                <OrdersKanban initialOrders={activeOrders} />
+                <OrdersKanban initialOrders={activeOrders} role={session.user.role} />
             </div>
         );
     } catch (error) {
