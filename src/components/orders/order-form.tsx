@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { createOrderAction } from "@/actions/order-actions";
 import { toast } from "sonner";
 import { Trash2, Plus, Minus, Search as SearchIcon } from "lucide-react";
@@ -121,7 +122,12 @@ export default function OrderForm({ products }: { products: any[] }) {
                                     >
                                         <span className="font-bold w-full text-left truncate text-gray-800 group-hover:text-primary transition-colors" title={product.name}>{product.name}</span>
                                         <div className="flex justify-between w-full items-center">
-                                            <span className="text-sm text-primary font-black">${Math.round(parseFloat(product.price))}</span>
+                                            <span className={cn(
+                                                "text-sm font-black transition-colors",
+                                                product.isAvailable ? "text-blue-900" : "text-gray-400"
+                                            )}>
+                                                ${Math.round(parseFloat(product.price))}
+                                            </span>
                                             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter bg-gray-100 px-1.5 rounded py-0.5">{product.category}</span>
                                         </div>
                                         {!product.isAvailable && <span className="text-[10px] text-red-500 uppercase font-black tracking-tighter">Agotado</span>}
