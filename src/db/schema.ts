@@ -171,11 +171,32 @@ export const apiKeyRelations = relations(apiKeys, ({ one }) => ({
     }),
 }));
 
-// Update business relations to include apiKeys
+export const diaSemanaEnum = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'] as const;
+
+export const viandasDiarias = mysqlTable("viandas_diarias", {
+    id: int("id").primaryKey().autoincrement(),
+    businessId: varchar("business_id", { length: 36 }).references(() => businesses.id).notNull(),
+    diaSemana: mysqlEnum("dia_semana", diaSemanaEnum).notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    description: varchar("description", { length: 500 }),
+    price: int("price").notNull(),
+    isAvailable: boolean("is_available").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const viandasDiariasRelations = relations(viandasDiarias, ({ one }) => ({
+    business: one(businesses, {
+        fields: [viandasDiarias.businessId],
+        references: [businesses.id],
+    }),
+}));
+
+// Update business relations to include apiKeys and viandasDiarias
 export const businessRelations = relations(businesses, ({ many }) => ({
     users: many(users),
     products: many(products),
     customers: many(customers),
     orders: many(orders),
     apiKeys: many(apiKeys),
+    viandasDiarias: many(viandasDiarias),
 }));
