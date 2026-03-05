@@ -205,7 +205,7 @@ export default function DailyMenuEditor({
                                                     value={item.name}
                                                     onChange={(e) => updateItem(item.tempId, "name", e.target.value)}
                                                     placeholder="Ej: Milanesa con puré"
-                                                    className="font-medium"
+                                                    className="font-medium text-gray-900 dark:text-gray-900 bg-gray-100 dark:bg-gray-200 dark:border-gray-300 placeholder:text-gray-500 dark:placeholder:text-gray-500"
                                                 />
                                             </div>
                                             <div className="space-y-1.5">
@@ -219,7 +219,7 @@ export default function DailyMenuEditor({
                                                     onChange={(e) => updateItem(item.tempId, "price", parseInt(e.target.value) || 0)}
                                                     placeholder="0"
                                                     min="0"
-                                                    className="font-semibold"
+                                                    className="font-semibold text-gray-900 dark:text-gray-900 bg-gray-100 dark:bg-gray-200 dark:border-gray-300 placeholder:text-gray-500 dark:placeholder:text-gray-500"
                                                 />
                                             </div>
                                         </div>
@@ -232,7 +232,7 @@ export default function DailyMenuEditor({
                                                 value={item.description}
                                                 onChange={(e) => updateItem(item.tempId, "description", e.target.value)}
                                                 placeholder="Ej: Con ensalada mixta y bebida"
-                                                className="text-gray-600"
+                                                className="font-medium text-gray-900 dark:text-gray-900 bg-gray-100 dark:bg-gray-200 dark:border-gray-300 placeholder:text-gray-500 dark:placeholder:text-gray-500"
                                             />
                                         </div>
                                     </div>
