@@ -8,12 +8,6 @@ const nextConfig = {
   // Standalone output para Docker deployment
   output: 'standalone',
   // outputFileTracingRoot: path.join(__dirname),
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   experimental: {
     serverActions: {
       allowedOrigins: ['gururesto.guruweb.com.ar', 'www.gururesto.guruweb.com.ar'],

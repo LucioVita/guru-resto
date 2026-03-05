@@ -149,3 +149,27 @@ export async function getOpenCaja() {
         ),
     });
 }
+
+export async function getCashRegisterOrders() {
+    const session = await auth();
+    if (!session || !session.user.businessId) return [];
+
+    const openCaja = await db.query.cashRegisters.findFirst({
+        where: and(
+            eq(cashRegisters.businessId, session.user.businessId),
+            eq(cashRegisters.status, "open")
+        ),
+    });
+
+    if (!openCaja) return [];
+
+    return db.query.orders.findMany({
+        where: and(
+            eq(orders.businessId, session.user.businessId),
+            gte(orders.createdAt, openCaja.openingTime)
+        ),
+        with: {
+            customer: true,
+        },
+    });
+}
