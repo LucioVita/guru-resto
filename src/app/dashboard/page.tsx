@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { orders, customers, orderItems, products } from "@/db/schema";
+import { orders, customers, orderItems, products, businesses } from "@/db/schema";
 import { eq, and, inArray, desc } from "drizzle-orm";
 import OrdersKanban from "@/components/dashboard/orders-kanban";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,9 @@ export default async function DashboardPage() {
 
         const orderIds = orderRows.map((r) => r.order.id);
 
+        // Fetch business info
+        const [business] = await db.select().from(businesses).where(eq(businesses.id, session.user.businessId));
+
         // Fetch items and products for these orders
         let allItems: any[] = [];
         if (orderIds.length > 0) {
@@ -73,6 +76,7 @@ export default async function DashboardPage() {
                 ...order,
                 customer,
                 items,
+                business, // Include business info
             };
         });
 

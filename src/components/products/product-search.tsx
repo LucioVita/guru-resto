@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useTransition, useState, useEffect } from "react";
 
-export default function ProductSearch() {
+export default function ProductSearch({ placeholder = "Buscar productos..." }: { placeholder?: string }) {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -34,7 +34,7 @@ export default function ProductSearch() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
             <Input
                 type="search"
-                placeholder="Buscar productos..."
+                placeholder={placeholder}
                 className="pl-9 bg-white"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}

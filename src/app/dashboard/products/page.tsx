@@ -34,16 +34,21 @@ export default async function ProductsPage({
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <h1 className="text-3xl font-bold">Productos</h1>
-                <div className="flex items-center gap-4">
-                    <ProductSearch />
-                    <ProductFormDialog>
-                        <Button className="gap-2 whitespace-nowrap">
-                            <Plus className="h-4 w-4" />
-                            Agregar Producto
-                        </Button>
-                    </ProductFormDialog>
+            <div className="sticky top-0 z-20 -mt-6 -mx-6 px-6 pt-6 pb-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/50">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h1 className="text-3xl font-black tracking-tighter">Productos</h1>
+                        <p className="text-gray-500 text-sm">Administra tus productos</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <ProductSearch />
+                        <ProductFormDialog>
+                            <Button className="gap-2 whitespace-nowrap">
+                                <Plus className="h-4 w-4" />
+                                Agregar Producto
+                            </Button>
+                        </ProductFormDialog>
+                    </div>
                 </div>
             </div>
 

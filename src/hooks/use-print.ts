@@ -6,9 +6,9 @@ export const usePrint = () => {
     if (!printWindow) return;
 
     const itemsContent = order.items?.map((item: any) => `
-      <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 3px;">
-        <span style="flex: 1;">${item.quantity}x ${item.product?.name || 'Producto'}</span>
-        <span style="width: 60px; text-align: right;">$${(parseFloat(item.price) * item.quantity).toFixed(2)}</span>
+      <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: bold; margin-bottom: 5px; border-bottom: 0.5px solid #eee; padding-bottom: 2px;">
+        <span style="flex: 1;">${item.quantity}x ${item.name || item.product?.name || 'Producto'}</span>
+        <span style="width: 70px; text-align: right;">$${(parseFloat(item.price) * item.quantity).toFixed(0)}</span>
       </div>
     `).join('') || '';
 
@@ -19,39 +19,41 @@ export const usePrint = () => {
         <head>
           <title>Imprimir ${type.toUpperCase()}</title>
           <style>
-            @page { size: 80mm auto; margin: 0; }
+            @page { size: 58mm auto; margin: 0; }
             body { 
-              width: 72mm; 
-              font-family: 'Arial', sans-serif; 
-              padding: 4mm; 
+              width: 50mm; 
+              font-family: 'Courier New', Courier, monospace; 
+              padding: 2mm; 
               margin: 0;
               color: black;
-              line-height: 1.2;
+              line-height: 1.1;
+              font-size: 14px;
             }
             .center { text-align: center; }
             .right { text-align: right; }
-            .bold { font-weight: bold; }
-            .header-info { font-size: 11px; margin-bottom: 5px; }
-            .business-name { font-size: 18px; margin-bottom: 2px; text-transform: uppercase; }
+            .bold { font-weight: 1000; }
+            .header-info { font-size: 13px; margin-bottom: 5px; }
+            .business-name { font-size: 22px; margin-bottom: 2px; text-transform: uppercase; font-weight: black; letter-spacing: -1px; }
             .divider { border-top: 1px dashed black; margin: 8px 0; }
-            .footer { font-size: 10px; margin-top: 15px; }
+            .footer { font-size: 12px; margin-top: 15px; border-top: 1px solid black; padding-top: 5px; }
             .item-list { margin: 10px 0; }
-            .total-row { font-size: 16px; margin-top: 5px; }
+            .total-row { font-size: 20px; margin-top: 5px; border-top: 1px solid black; padding-top: 5px; }
             .afip-box { 
                 border: 1px solid black; 
                 padding: 5px; 
                 margin-top: 10px; 
-                font-size: 10px;
+                font-size: 12px;
                 text-align: left;
             }
             .invoice-type {
-                border: 1px solid black;
-                width: 30px;
-                height: 30px;
+                border: 2px solid black;
+                width: 35px;
+                height: 35px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 20px;
+                font-size: 24px;
+                font-weight: bold;
                 margin: 0 auto 5px;
             }
           </style>
@@ -60,13 +62,13 @@ export const usePrint = () => {
           <div class="center">
             ${type === 'factura' ? `
                 <div class="invoice-type bold">${order.afipInvoiceType === 1 || order.afipInvoiceType === 6 ? 'B' : 'C'}</div>
-                <div class="bold" style="font-size: 12px;">ORIGINAL</div>
+                <div class="bold" style="font-size: 14px;">ORIGINAL</div>
             ` : ''}
             <div class="bold business-name">${business.name || 'GURU RESTO'}</div>
             <div class="header-info">
-                ${business.address || ''}<br>
-                Tel: ${business.phone || ''}<br>
-                ${business.afipCuit ? `CUIT: ${business.afipCuit}` : ''}
+                ${business.address ? `<b>Dir:</b> ${business.address}<br>` : ''}
+                ${business.phone ? `<b>Tel:</b> ${business.phone}<br>` : ''}
+                ${business.afipCuit ? `<b>CUIT:</b> ${business.afipCuit}` : ''}
             </div>
           </div>
 
@@ -86,7 +88,7 @@ export const usePrint = () => {
 
           <div class="divider"></div>
           
-          <div class="bold" style="font-size: 12px; margin-bottom: 5px;">DETALLE</div>
+          <div class="bold" style="font-size: 16px; margin-bottom: 5px; text-decoration: underline;">DETALLE</div>
           <div class="item-list">
             ${itemsContent}
           </div>
@@ -94,9 +96,9 @@ export const usePrint = () => {
           <div class="divider"></div>
 
           <div class="total-row right">
-            <span class="bold">TOTAL: $${order.total}</span>
+            <span class="bold">TOTAL: $${Math.round(parseFloat(order.total))}</span>
           </div>
-          <div class="header-info right">
+          <div class="header-info right" style="font-size: 12px;">
             Cond. de Venta: ${order.paymentMethod === 'cash' ? 'Efectivo' : 'Tarjeta/Transferencia'}
           </div>
 
@@ -104,20 +106,14 @@ export const usePrint = () => {
             <div class="afip-box">
                 <div class="bold">CAE: ${order.afipCae}</div>
                 <div class="bold">Vto. CAE: ${new Date(order.afipCaeExpiration).toLocaleDateString('es-AR')}</div>
-                <div style="margin-top: 5px; font-style: italic;">
+                <div style="margin-top: 5px; font-style: italic; font-size: 10px;">
                     Comprobante autorizado por AFIP
-                </div>
-            </div>
-            <div class="center" style="margin-top: 10px;">
-                <div style="font-size: 8px;">QR AFIP</div>
-                <div style="border: 1px solid #ccc; width: 40mm; height: 10mm; margin: 0 auto; display: flex; items-center; justify-center; font-size: 8px; color: #999;">
-                    [Espacio para QR AFIP]
                 </div>
             </div>
           ` : ''}
 
           <div class="footer center">
-            ${type === 'comanda' ? '--- FIN DE COMANDA ---' : '¡Gracias por elegirnos!'}
+            ${type === 'comanda' ? '<b>--- FIN DE COMANDA ---</b>' : '<b>¡Gracias por elegirnos!</b>'}
           </div>
         </body>
       </html>

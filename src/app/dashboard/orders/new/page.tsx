@@ -17,7 +17,7 @@ export default async function NewOrderPage() {
 
     return (
         <div className="max-w-5xl mx-auto">
-            <h1 className="text-3xl font-bold mb-8">Place New Order</h1>
+            <h1 className="text-3xl font-black tracking-tighter mb-8 italic text-primary">Tomar Pedido</h1>
             <OrderForm products={productList} />
         </div>
     );
