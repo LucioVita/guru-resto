@@ -6,9 +6,9 @@ export const usePrint = () => {
     if (!printWindow) return;
 
     const itemsContent = order.items?.map((item: any) => `
-      <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: bold; margin-bottom: 5px; border-bottom: 0.5px solid #eee; padding-bottom: 2px;">
-        <span style="flex: 1;">${item.quantity}x ${item.name || item.product?.name || 'Producto'}</span>
-        <span style="width: 70px; text-align: right;">$${(parseFloat(item.price) * item.quantity).toFixed(0)}</span>
+      <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; margin-bottom: 5px; border-bottom: 1px dashed #eee; padding-bottom: 2px;">
+        <span style="flex: 1; padding-right: 2px; word-break: break-word;">${item.quantity}x ${item.name || item.product?.name || 'Producto'}</span>
+        <span style="width: 64px; text-align: right; flex-shrink: 0;">$${(parseFloat(item.price) * item.quantity).toFixed(0)}</span>
       </div>
     `).join('') || '';
 
@@ -21,23 +21,23 @@ export const usePrint = () => {
           <style>
             @page { size: 58mm auto; margin: 0; }
             body { 
-              width: 50mm; 
+              width: 46mm; 
               font-family: 'Courier New', Courier, monospace; 
-              padding: 2mm; 
-              margin: 0;
+              padding: 0; 
+              margin: 0 auto;
               color: black;
-              line-height: 1.1;
-              font-size: 14px;
+              line-height: 1.2;
+              font-size: 12px;
             }
             .center { text-align: center; }
             .right { text-align: right; }
-            .bold { font-weight: 1000; }
-            .header-info { font-size: 13px; margin-bottom: 5px; }
-            .business-name { font-size: 22px; margin-bottom: 2px; text-transform: uppercase; font-weight: black; letter-spacing: -1px; }
+            .bold { font-weight: bold; }
+            .header-info { font-size: 12px; margin-bottom: 5px; word-break: break-word; }
+            .business-name { font-size: 18px; margin-bottom: 2px; text-transform: uppercase; font-weight: bold; letter-spacing: -1px; }
             .divider { border-top: 1px dashed black; margin: 8px 0; }
             .footer { font-size: 12px; margin-top: 15px; border-top: 1px solid black; padding-top: 5px; }
             .item-list { margin: 10px 0; }
-            .total-row { font-size: 20px; margin-top: 5px; border-top: 1px solid black; padding-top: 5px; }
+            .total-row { font-size: 18px; margin-top: 5px; border-top: 1px solid black; padding-top: 5px; }
             .afip-box { 
                 border: 1px solid black; 
                 padding: 5px; 
