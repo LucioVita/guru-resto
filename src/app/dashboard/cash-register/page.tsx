@@ -34,15 +34,25 @@ export default async function CashRegisterPage() {
     }
     const validOrders = currentOrders.filter((o: any) => o.status !== 'cancelled');
     
-    let expectedCash = openCaja ? parseFloat(openCaja.initialAmount) : 0;
+    let expectedCash = 0;
+    try {
+        expectedCash = openCaja ? parseFloat(openCaja.initialAmount || "0") : 0;
+    } catch (e) {
+        console.error("Error parsing initialAmount:", e);
+    }
+    
     let expectedTransfer = 0;
     let expectedCard = 0;
     
     validOrders.forEach((o: any) => {
-        const amt = parseFloat(o.total);
-        if (o.paymentMethod === 'cash') expectedCash += amt;
-        else if (o.paymentMethod === 'transfer') expectedTransfer += amt;
-        else if (o.paymentMethod === 'card') expectedCard += amt;
+        try {
+            const amt = parseFloat(o.total || "0");
+            if (o.paymentMethod === 'cash') expectedCash += amt;
+            else if (o.paymentMethod === 'transfer') expectedTransfer += amt;
+            else if (o.paymentMethod === 'card') expectedCard += amt;
+        } catch (e) {
+            console.error("Error processing order total for expected amounts:", e);
+        }
     });
 
     return (

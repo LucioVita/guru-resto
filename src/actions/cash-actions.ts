@@ -23,12 +23,15 @@ export async function openCajaAction(initialAmountRaw: string) {
 
     if (existing) throw new Error("There is already an open cash register");
 
+    const now = new Date();
+    console.log(`[Caja] Abriendo caja para business ${session.user.businessId} con monto ${initialAmount} a las ${now.toISOString()}`);
+
     await db.insert(cashRegisters).values({
         businessId: session.user.businessId,
         openedById: session.user.id,
         initialAmount,
         status: "open",
-        openingTime: new Date(),
+        openingTime: now,
     });
 
     revalidatePath("/dashboard/cash-register");

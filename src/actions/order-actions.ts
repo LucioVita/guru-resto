@@ -1,14 +1,12 @@
 'use server';
 
 import { db } from "@/db";
-import { orders, orderItems, customers, products } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { orders, orderItems, customers, products, businesses, viandasDiarias } from "@/db/schema";
+import { eq, and, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { sendWebhook } from "@/lib/webhook";
-import { businesses } from "@/db/schema";
 import { createElectronicInvoice } from "@/lib/afip";
-import { desc } from "drizzle-orm";
 
 // Webhook fijo de n8n para notificaciones automáticas al cliente
 const N8N_STATUS_WEBHOOK = "https://n8n.resto.guruweb.com.ar/webhook/cambios-de-estado";
@@ -226,13 +224,30 @@ export async function createOrderAction(data: {
     if (newOrder) {
         // Fetch product names for the items
         const itemPromise = data.items.map(async (item) => {
-            const [product] = await db.select().from(products).where(eq(products.id, item.productId));
+            let productName = 'Unknown Product';
+            let productPrice = item.price;
+
+            if (item.productId.startsWith('daily-')) {
+                const dailyId = parseInt(item.productId.replace('daily-', ''));
+                const [dailyMenu] = await db.select().from(viandasDiarias).where(eq(viandasDiarias.id, dailyId));
+                if (dailyMenu) {
+                    productName = `[MENÚ] ${dailyMenu.name}`;
+                    productPrice = dailyMenu.price.toString();
+                }
+            } else {
+                const [product] = await db.select().from(products).where(eq(products.id, item.productId));
+                if (product) {
+                    productName = product.name;
+                    productPrice = product.price;
+                }
+            }
+
             return {
                 orderId: newOrder.id,
-                productId: item.productId,
-                name: product?.name || 'Unknown Product', // Fallback
+                productId: item.productId.startsWith('daily-') ? null : item.productId,
+                name: productName,
                 quantity: item.quantity,
-                price: item.price,
+                price: productPrice,
             };
         });
 
