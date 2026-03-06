@@ -261,6 +261,11 @@ export async function updateOrderStatusAction(orderId: string, status: any, noti
     const session = await auth();
     if (!session || !session.user.businessId) throw new Error("Unauthorized");
 
+    // Prevenir que empleados puedan anular pedidos
+    if (status === 'cancelled' && session.user.role !== 'business_admin' && session.user.role !== 'super_admin') {
+        throw new Error("Solo un administrador puede anular pedidos.");
+    }
+
     await db.update(orders)
         .set({ status, updatedAt: new Date() })
         .where(and(eq(orders.id, orderId), eq(orders.businessId, session.user.businessId)));

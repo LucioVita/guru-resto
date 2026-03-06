@@ -141,7 +141,7 @@ export function KanbanCard({ order, isOverlay, role, onStatusChange }: { order: 
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 text-gray-300 hover:text-red-500 hover:bg-red-50"
-                            onClick={(e) => { e.stopPropagation(); if (confirm('¿Eliminar pedido?')) onStatusChange?.(order.id, 'cancelled'); }}
+                            onClick={(e) => { e.stopPropagation(); if (confirm('¿Eliminar pedido? Quedará registrado en sistema.')) onStatusChange?.(order.id, 'cancelled'); }}
                         >
                             <Trash2 className="h-3.5 w-3.5" />
                         </Button>
