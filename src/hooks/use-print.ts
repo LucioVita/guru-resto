@@ -6,9 +6,9 @@ export const usePrint = () => {
     if (!printWindow) return;
 
     const itemsContent = order.items?.map((item: any) => `
-      <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; margin-bottom: 5px; border-bottom: 1px dashed #eee; padding-bottom: 2px;">
+      <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; margin-bottom: 5px; border-bottom: 1px dashed #eee; padding-bottom: 2px; padding-right: 15px;">
         <span style="flex: 1; padding-right: 2px; word-break: break-word;">${item.quantity}x ${item.name || item.product?.name || 'Producto'}</span>
-        <span style="width: 64px; text-align: right; flex-shrink: 0;">$${(parseFloat(item.price) * item.quantity).toFixed(0)}</span>
+        <span style="width: auto; text-align: right; flex-shrink: 0;">$${(parseFloat(item.price) * item.quantity).toFixed(0)}</span>
       </div>
     `).join('') || '';
 
@@ -95,10 +95,10 @@ export const usePrint = () => {
 
           <div class="divider"></div>
 
-          <div class="total-row right">
+          <div class="total-row">
             <span class="bold">TOTAL: $${Math.round(parseFloat(order.total))}</span>
           </div>
-          <div class="header-info right" style="font-size: 12px;">
+          <div class="header-info" style="font-size: 12px;">
             Cond. de Venta: ${order.paymentMethod === 'cash' ? 'Efectivo' : 'Tarjeta/Transferencia'}
           </div>
 

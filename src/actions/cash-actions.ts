@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { cashRegisters, orders } from "@/db/schema";
-import { eq, and, isNull, sum, gte, desc, inArray } from "drizzle-orm";
+import { eq, and, isNull, sum, gte, desc, inArray, lt } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
@@ -32,6 +32,27 @@ export async function openCajaAction(initialAmount: string) {
     revalidatePath("/dashboard/cash-register");
 }
 
+async function getCajaStartTime(businessId: string, openingTime: Date) {
+    const previousCaja = await db.query.cashRegisters.findFirst({
+        where: and(
+            eq(cashRegisters.businessId, businessId),
+            eq(cashRegisters.status, "closed"),
+            lt(cashRegisters.closingTime, openingTime)
+        ),
+        orderBy: [desc(cashRegisters.closingTime)]
+    });
+
+    if (previousCaja && previousCaja.closingTime) {
+        return previousCaja.closingTime;
+    }
+    
+    // Fallback if no previous caja found for this business
+    const today = new Date(openingTime);
+    today.setHours(0, 0, 0, 0);
+    return today;
+}
+
+
 function generateCSV(orders: any[], items: any[], openingTime: Date, closingTime: Date, initialAmount: string, finalAmount: string): string {
     const headers = [
         'Fecha Pedido',
@@ -56,11 +77,12 @@ function generateCSV(orders: any[], items: any[], openingTime: Date, closingTime
     ]);
 
     // Summaries
-    const totalSales = orders.reduce((sum, order) => sum + parseFloat(order.total), 0);
+    const validOrders = orders.filter(o => o.status !== 'cancelled');
+    const totalSales = validOrders.reduce((sum, order) => sum + parseFloat(order.total), 0);
 
     // Paymethod Methods Summary
     const byPayment: Record<string, number> = {};
-    orders.forEach(o => {
+    validOrders.forEach(o => {
         const method = o.paymentMethod || 'other';
         byPayment[method] = (byPayment[method] || 0) + parseFloat(o.total);
     });
@@ -120,11 +142,13 @@ export async function closeCajaAction(data: { actualAmount: string; notes?: stri
 
     if (!openCaja) throw new Error("No open cash register found");
 
+    const startTime = await getCajaStartTime(session.user.businessId, openCaja.openingTime);
+
     // Get all orders since opening
     const dailyOrders = await db.query.orders.findMany({
         where: and(
             eq(orders.businessId, session.user.businessId),
-            gte(orders.createdAt, openCaja.openingTime)
+            gte(orders.createdAt, startTime)
         ),
         with: {
             customer: true,
@@ -137,8 +161,9 @@ export async function closeCajaAction(data: { actualAmount: string; notes?: stri
         dailyItems = await db.select().from(orderItems).where(inArray(orderItems.orderId, dailyOrders.map(o => o.id)));
     }
 
-    // Calculate total sales since opening
-    const totalSales = dailyOrders.reduce((sum, order) => sum + parseFloat(order.total), 0);
+    // Calculate total sales since opening (excluding cancelled)
+    const validDailyOrders = dailyOrders.filter(o => o.status !== 'cancelled');
+    const totalSales = validDailyOrders.reduce((sum, order) => sum + parseFloat(order.total), 0);
     const finalCalculated = (parseFloat(openCaja.initialAmount) + totalSales).toString();
 
     const closingTime = new Date();
@@ -211,13 +236,13 @@ export async function downloadCajaReportAction(cajaId: string) {
 
     if (!caja || !caja.closingTime) throw new Error("Caja session not found or not closed");
 
+    const startTime = await getCajaStartTime(session.user.businessId, caja.openingTime);
+
     // Fetch accurate orders for that period
     const sessionOrders = await db.query.orders.findMany({
         where: and(
             eq(orders.businessId, session.user.businessId),
-            gte(orders.createdAt, caja.openingTime),
-            eq(orders.status, "delivered") // Optionally only finished orders? Let's include all non-cancelled?
-            // Actually, normally we report all that were delivered/paid.
+            gte(orders.createdAt, startTime)
         ),
         with: { customer: true },
     });
@@ -225,7 +250,7 @@ export async function downloadCajaReportAction(cajaId: string) {
     // Filtering precisely by time range if there are multiple sessions same day
     const filteredOrders = sessionOrders.filter(o =>
         o.createdAt &&
-        o.createdAt >= caja.openingTime &&
+        o.createdAt >= startTime &&
         caja.closingTime &&
         o.createdAt <= caja.closingTime
     );
@@ -263,10 +288,12 @@ export async function getCashRegisterOrders() {
 
     if (!openCaja) return [];
 
+    const startTime = await getCajaStartTime(session.user.businessId, openCaja.openingTime);
+
     return db.query.orders.findMany({
         where: and(
             eq(orders.businessId, session.user.businessId),
-            gte(orders.createdAt, openCaja.openingTime)
+            gte(orders.createdAt, startTime)
         ),
         with: {
             customer: true,

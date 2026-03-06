@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { getOpenCaja, getCajaHistory, downloadCajaReportAction } from "@/actions/cash-actions";
+import { getOpenCaja, getCajaHistory, downloadCajaReportAction, getCashRegisterOrders } from "@/actions/cash-actions";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,20 @@ export default async function CashRegisterPage() {
     const openCaja = await getOpenCaja();
     const isAdmin = session.user.role === 'business_admin' || session.user.role === 'super_admin';
     const history = isAdmin ? await getCajaHistory() : [];
+
+    const currentOrders = openCaja ? await getCashRegisterOrders() : [];
+    const validOrders = currentOrders.filter((o: any) => o.status !== 'cancelled');
+    
+    let expectedCash = openCaja ? parseFloat(openCaja.initialAmount) : 0;
+    let expectedTransfer = 0;
+    let expectedCard = 0;
+    
+    validOrders.forEach((o: any) => {
+        const amt = parseFloat(o.total);
+        if (o.paymentMethod === 'cash') expectedCash += amt;
+        else if (o.paymentMethod === 'transfer') expectedTransfer += amt;
+        else if (o.paymentMethod === 'card') expectedCard += amt;
+    });
 
     return (
         <div className="max-w-4xl mx-auto py-8 space-y-8 px-4">
@@ -77,6 +91,26 @@ export default async function CashRegisterPage() {
                                 <div className="flex justify-between border-b border-gray-100 pb-2">
                                     <span className="text-gray-400 text-xs uppercase">Fondo Inicial</span>
                                     <span className="text-lg font-black text-primary">${Math.round(parseFloat(openCaja.initialAmount))}</span>
+                                </div>
+
+                                <div className="pt-2">
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Ingresos Esperados</h4>
+                                    <div className="space-y-1 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-gray-600 font-medium">Efectivo Total (inc. Fondo)</span>
+                                            <span className="font-black text-gray-800">${Math.round(expectedCash)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-gray-600 font-medium">Transferencias</span>
+                                            <span className="font-black text-blue-600">${Math.round(expectedTransfer)}</span>
+                                        </div>
+                                        {expectedCard > 0 && (
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-gray-600 font-medium">Tarjeta</span>
+                                                <span className="font-black text-gray-800">${Math.round(expectedCard)}</span>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
