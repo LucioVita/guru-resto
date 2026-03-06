@@ -8,7 +8,8 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { businesses, orderItems, products as productsTable } from "@/db/schema";
 
-export async function openCajaAction(initialAmount: string) {
+export async function openCajaAction(initialAmountRaw: string) {
+    const initialAmount = initialAmountRaw || "0";
     const session = await auth();
     if (!session || !session.user.businessId) throw new Error("Unauthorized");
 
@@ -27,12 +28,16 @@ export async function openCajaAction(initialAmount: string) {
         openedById: session.user.id,
         initialAmount,
         status: "open",
+        openingTime: new Date(),
     });
 
     revalidatePath("/dashboard/cash-register");
 }
 
-async function getCajaStartTime(businessId: string, openingTime: Date) {
+async function getCajaStartTime(businessId: string, openingTimeParam: Date | string | null | undefined) {
+    if (!openingTimeParam) return new Date();
+    const openingTime = new Date(openingTimeParam);
+
     const previousCaja = await db.query.cashRegisters.findFirst({
         where: and(
             eq(cashRegisters.businessId, businessId),
@@ -43,7 +48,7 @@ async function getCajaStartTime(businessId: string, openingTime: Date) {
     });
 
     if (previousCaja && previousCaja.closingTime) {
-        return previousCaja.closingTime;
+        return new Date(previousCaja.closingTime);
     }
     
     // Fallback if no previous caja found for this business

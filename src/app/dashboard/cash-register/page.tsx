@@ -1,10 +1,16 @@
 import { auth } from "@/auth";
-import { getOpenCaja, getCajaHistory, downloadCajaReportAction, getCashRegisterOrders } from "@/actions/cash-actions";
+import { 
+    getOpenCaja, 
+    getCajaHistory, 
+    downloadCajaReportAction, 
+    getCashRegisterOrders,
+    openCajaAction, 
+    closeCajaAction 
+} from "@/actions/cash-actions";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { openCajaAction, closeCajaAction } from "@/actions/cash-actions";
 import { Badge } from "@/components/ui/badge";
 import { Wallet, LogIn, LogOut, Receipt, History, Download, FileSpreadsheet } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -20,7 +26,12 @@ export default async function CashRegisterPage() {
     const isAdmin = session.user.role === 'business_admin' || session.user.role === 'super_admin';
     const history = isAdmin ? await getCajaHistory() : [];
 
-    const currentOrders = openCaja ? await getCashRegisterOrders() : [];
+    let currentOrders: any[] = [];
+    try {
+        currentOrders = openCaja ? await getCashRegisterOrders() : [];
+    } catch (error) {
+        console.error("Error fetching cash register orders:", error);
+    }
     const validOrders = currentOrders.filter((o: any) => o.status !== 'cancelled');
     
     let expectedCash = openCaja ? parseFloat(openCaja.initialAmount) : 0;
@@ -65,7 +76,7 @@ export default async function CashRegisterPage() {
                                     <Label htmlFor="amount" className="font-bold">Efectivo Inicial (Fondo)</Label>
                                     <div className="relative">
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold">$</span>
-                                        <Input id="amount" name="amount" type="number" step="1" className="pl-8 h-12 text-lg font-bold" placeholder="0" required />
+                                        <Input id="amount" name="amount" type="number" step="1" className="pl-8 h-12 text-lg font-bold" defaultValue="0" placeholder="0" />
                                     </div>
                                 </div>
                             </CardContent>
