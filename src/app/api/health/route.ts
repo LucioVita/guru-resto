@@ -14,6 +14,7 @@ export async function GET() {
         return NextResponse.json({
             status: "ok",
             database: "connected",
+            build: "2026-03-07 00:10",
             usersInDb: userCount[0],
             env: {
                 hasAuthSecret: !!process.env.AUTH_SECRET,
