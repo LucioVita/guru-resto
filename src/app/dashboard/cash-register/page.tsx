@@ -161,6 +161,32 @@ export default async function CashRegisterPage() {
                                         <Label htmlFor="notes">Notas</Label>
                                         <Input id="notes" name="notes" placeholder="¿Alguna diferencia?" />
                                     </div>
+
+                                    <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 mt-6 group">
+                                        <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                            📊 Arqueo de Control (Guía)
+                                            <span className="h-1 w-1 rounded-full bg-amber-400 group-hover:w-2 transition-all"></span>
+                                        </h4>
+                                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                                            <div className="flex justify-between border-b border-amber-100 pb-1">
+                                                <span className="text-amber-800/70">Efectivo (con fondo):</span>
+                                                <span className="font-bold text-amber-900">${Math.round(expectedCash)}</span>
+                                            </div>
+                                            <div className="flex justify-between border-b border-amber-100 pb-1">
+                                                <span className="text-amber-800/70">Transferencias:</span>
+                                                <span className="font-bold text-blue-600">${Math.round(expectedTransfer)}</span>
+                                            </div>
+                                            <div className="flex justify-between border-b border-amber-100 pb-1">
+                                                <span className="text-amber-800/70">Venta Tarjeta:</span>
+                                                <span className="font-bold text-amber-900">${Math.round(expectedCard)}</span>
+                                            </div>
+                                            <div className="flex justify-between border-b border-amber-100 pb-1">
+                                                <span className="text-amber-800/70 text-right">TOTAL VENTAS:</span>
+                                                <span className="font-black text-primary">${Math.round(expectedCash + expectedTransfer + expectedCard - (parseFloat(openCaja.initialAmount || "0")))}</span>
+                                            </div>
+                                        </div>
+                                        <p className="text-[9px] text-amber-600 mt-2 font-medium italic">* Los montos se calculan en base a los pedidos entregados/listos de esta sesión.</p>
+                                    </div>
                                 </CardContent>
                                 <CardFooter>
                                     <Button type="submit" variant="destructive" className="w-full h-12 text-lg font-black tracking-tighter shadow-lg shadow-destructive/20 uppercase">Cerrar y Generar Reporte</Button>
@@ -215,8 +241,11 @@ export default async function CashRegisterPage() {
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <span className="text-primary font-black text-base">
-                                                ${Math.round(parseFloat(caja.finalAmountCalculated || "0") - parseFloat(caja.initialAmount))}
+                                            <span className={cn(
+                                                "font-black text-base",
+                                                caja.status === 'open' ? "text-gray-300 italic" : "text-primary"
+                                            )}>
+                                                {caja.status === 'open' ? '---' : `$${Math.round(parseFloat(caja.finalAmountCalculated || "0") - parseFloat(caja.initialAmount))}`}
                                             </span>
                                         </TableCell>
                                         <TableCell className="text-right px-6">

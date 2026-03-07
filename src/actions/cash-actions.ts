@@ -197,11 +197,8 @@ export async function closeCajaAction(data: { actualAmount: string; notes?: stri
         data.actualAmount
     );
 
-    const csvBase64 = Buffer.from(csvContent, 'utf-8').toString('base64');
-    const fileName = `resumen_caja_${new Date().toISOString().split('T')[0]}.csv`;
-
     revalidatePath("/dashboard/cash-register");
-    redirect(`/dashboard/cash-register/download?data=${encodeURIComponent(csvBase64)}&filename=${fileName}`);
+    redirect(`/dashboard/cash-register/download?cajaId=${openCaja.id}`);
 }
 
 export async function getOpenCaja() {
@@ -228,12 +225,12 @@ export async function getCajaHistory() {
 }
 
 export async function downloadCajaReportAction(cajaId: string) {
+    redirect(`/dashboard/cash-register/download?cajaId=${cajaId}`);
+}
+
+export async function getCSVReportAction(cajaId: string) {
     const session = await auth();
     if (!session || !session.user.businessId) throw new Error("Unauthorized");
-    // Only business_admin allowed to download history
-    if (session.user.role !== 'business_admin' && session.user.role !== 'super_admin') {
-        throw new Error("Acces restricted to administrators");
-    }
 
     const caja = await db.query.cashRegisters.findFirst({
         where: and(
@@ -242,9 +239,10 @@ export async function downloadCajaReportAction(cajaId: string) {
         ),
     });
 
-    if (!caja || !caja.closingTime) throw new Error("Caja session not found or not closed");
+    if (!caja) throw new Error("Caja session not found");
 
     const startTime = await getCajaStartTime(session.user.businessId, caja.openingTime);
+    const endTime = caja.closingTime || new Date();
 
     // Fetch accurate orders for that period
     const sessionOrders = await db.query.orders.findMany({
@@ -255,12 +253,11 @@ export async function downloadCajaReportAction(cajaId: string) {
         with: { customer: true },
     });
 
-    // Filtering precisely by time range if there are multiple sessions same day
+    // Filtering precisely by time range
     const filteredOrders = sessionOrders.filter(o =>
         o.createdAt &&
         o.createdAt >= startTime &&
-        caja.closingTime &&
-        o.createdAt <= caja.closingTime
+        o.createdAt <= endTime
     );
 
     let sessionItems: any[] = [];
@@ -272,15 +269,15 @@ export async function downloadCajaReportAction(cajaId: string) {
         filteredOrders,
         sessionItems,
         caja.openingTime,
-        caja.closingTime,
+        endTime,
         caja.initialAmount,
         caja.finalAmountActual || "0"
     );
 
-    const csvBase64 = Buffer.from(csvContent, 'utf-8').toString('base64');
-    const fileName = `reporte_caja_${new Date(caja.openingTime).toISOString().split('T')[0]}.csv`;
-
-    redirect(`/dashboard/cash-register/download?data=${encodeURIComponent(csvBase64)}&filename=${fileName}`);
+    return {
+        content: Buffer.from(csvContent, 'utf-8').toString('base64'),
+        filename: `reporte_caja_${new Date(caja.openingTime).toISOString().split('T')[0]}.csv`
+    };
 }
 
 export async function getCashRegisterOrders() {
