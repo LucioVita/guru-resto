@@ -56,7 +56,7 @@ export default function Sidebar({ role }: { role: string }) {
                 })}
             </nav>
             <div className="px-6 py-4 flex flex-col gap-4 border-t">
-                <BusinessStatusToggle />
+                <BusinessStatusToggle role={role} />
                 <a
                     href="https://www.guruweb.com.ar"
                     target="_blank"

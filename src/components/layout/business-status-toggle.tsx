@@ -6,9 +6,10 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Power, PowerOff } from "lucide-react";
 
-export function BusinessStatusToggle() {
+export function BusinessStatusToggle({ role }: { role: string }) {
     const [isOpen, setIsOpen] = useState<boolean | null>(null);
     const [loading, setLoading] = useState(true);
+    const isAdmin = role === 'business_admin' || role === 'super_admin';
 
     useEffect(() => {
         async function fetchStatus() {
@@ -28,26 +29,33 @@ export function BusinessStatusToggle() {
     }, []);
 
     const handleToggle = async (checked: boolean) => {
+        if (!isAdmin) {
+            toast.error("Solo los administradores pueden cambiar el estado");
+            return;
+        }
+
         const previousState = isOpen;
         setIsOpen(checked);
         
         try {
             const res = await fetch("/api/business/status", {
-                method: "PATCH",
+                method: "POST", // Cambiado de PATCH a POST para mayor compatibilidad
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ isOpen: checked }),
             });
 
             if (!res.ok) {
-                throw new Error("Failed to update status");
+                const errorData = await res.json();
+                throw new Error(errorData.error || "Failed to update status");
             }
 
             toast.success(checked ? "Pedidos activados (n8n ON)" : "Pedidos desactivados (n8n OFF)");
-        } catch (error) {
+        } catch (error: any) {
             setIsOpen(previousState);
-            toast.error("Error al actualizar el estado");
+            toast.error(`Error: ${error.message}`);
         }
     };
+
 
     if (loading || isOpen === null) return null;
 
