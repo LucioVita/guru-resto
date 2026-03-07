@@ -23,6 +23,7 @@ export const businesses = mysqlTable("businesses", {
     afipCertificate: text("afip_certificate"),
     afipPrivateKey: text("afip_private_key"),
     isOpen: boolean("is_open").default(true).notNull(),
+    deliveryZones: text("delivery_zones"), // Store GeoJSON zones with prices
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -55,6 +56,8 @@ export const customers = mysqlTable("customers", {
     phone: varchar("phone", { length: 50 }),
     address: varchar("address", { length: 500 }),
     email: varchar("email", { length: 255 }),
+    lat: decimal("lat", { precision: 10, scale: 8 }),
+    lng: decimal("lng", { precision: 11, scale: 8 }),
     status: varchar("status", { length: 50 }).default("active"), // active, waiting_address, archived
     notes: varchar("notes", { length: 500 }),
     createdAt: timestamp("created_at").defaultNow(),
@@ -66,6 +69,9 @@ export const orders = mysqlTable("orders", {
     customerId: varchar("customer_id", { length: 36 }).references(() => customers.id),
     status: mysqlEnum("status", orderStatusEnum).default("pending").notNull(),
     total: decimal("total", { precision: 10, scale: 2 }).notNull(),
+    shippingCost: decimal("shipping_cost", { precision: 10, scale: 2 }).default("0.00"),
+    lat: decimal("lat", { precision: 10, scale: 8 }),
+    lng: decimal("lng", { precision: 11, scale: 8 }),
     paymentMethod: varchar("payment_method", { length: 50 }).default("cash"),
     // AFIP Invoice Info
     afipCae: varchar("afip_cae", { length: 100 }),

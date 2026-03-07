@@ -28,6 +28,7 @@ export async function updateAfipSettingsAction(formData: FormData) {
     setIfPresent("apiKey");
     setIfPresent("webhookUrl");
     setIfPresent("webhookStatusUrl");
+    setIfPresent("deliveryZones");
     setIfPresent("afipCuit");
     setIfPresent("afipToken");
     setIfPresent("afipEnvironment");
