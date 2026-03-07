@@ -9,7 +9,6 @@ import { Power, PowerOff } from "lucide-react";
 export function BusinessStatusToggle({ role }: { role: string }) {
     const [isOpen, setIsOpen] = useState<boolean | null>(null);
     const [loading, setLoading] = useState(true);
-    const isAdmin = role === 'business_admin' || role === 'super_admin';
 
     useEffect(() => {
         async function fetchStatus() {
@@ -29,11 +28,6 @@ export function BusinessStatusToggle({ role }: { role: string }) {
     }, []);
 
     const handleToggle = async (checked: boolean) => {
-        if (!isAdmin) {
-            toast.error("Solo los administradores pueden cambiar el estado");
-            return;
-        }
-
         const previousState = isOpen;
         setIsOpen(checked);
         
@@ -49,7 +43,7 @@ export function BusinessStatusToggle({ role }: { role: string }) {
                 throw new Error(errorData.error || "Failed to update status");
             }
 
-            toast.success(checked ? "Pedidos activados (n8n ON)" : "Pedidos desactivados (n8n OFF)");
+            toast.success(checked ? "IA Activada (Respondiendo)" : "IA Desactivada (En pausa)");
         } catch (error: any) {
             setIsOpen(previousState);
             toast.error(`Error: ${error.message}`);
@@ -66,10 +60,10 @@ export function BusinessStatusToggle({ role }: { role: string }) {
                     {isOpen ? <Power className="h-4 w-4" /> : <PowerOff className="h-4 w-4" />}
                 </div>
                 <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Estado n8n</p>
-                    <p className="text-sm font-black">{isOpen ? "VENTA ABIERTA" : "VENTA CERRADA"}</p>
+                    <p className="text-sm font-black">{isOpen ? "IA RESPONDE" : "IA EN PAUSA"}</p>
                 </div>
             </div>
+
             <Switch
                 checked={isOpen}
                 onCheckedChange={handleToggle}

@@ -34,12 +34,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Solo admin puede cambiar el estado
-    if (session.user.role !== "business_admin" && session.user.role !== "super_admin") {
-        console.warn("[STATUS_API] Access denied for role:", session.user.role);
-        return NextResponse.json({ error: "Forbidden: Only admins can change status" }, { status: 403 });
-    }
-
     try {
         const body = await req.json();
         const { isOpen } = body;
