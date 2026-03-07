@@ -42,6 +42,19 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        // 1b. Check if business is open
+        const business = await db.query.businesses.findFirst({
+            where: eq(businesses.id, businessId),
+            columns: { isOpen: true }
+        });
+
+        if (business && !business.isOpen) {
+            return NextResponse.json(
+                { error: "Business is closed", code: "BUSINESS_CLOSED" },
+                { status: 403 }
+            );
+        }
+
         // 2. Validate Body
         const body = await req.json();
         const validation = orderSchema.safeParse(body);

@@ -78,7 +78,17 @@ export async function createOrderInvoiceAction(orderId: string) {
 
     if (!order) throw new Error("Order not found");
 
-    const [business] = await db.select().from(businesses).where(eq(businesses.id, session.user.businessId));
+    const [business] = await db.select({
+        id: businesses.id,
+        name: businesses.name,
+        afipCuit: businesses.afipCuit,
+        afipToken: businesses.afipToken,
+        afipEnvironment: businesses.afipEnvironment,
+        afipPuntoVenta: businesses.afipPuntoVenta,
+        afipCertificate: businesses.afipCertificate,
+        afipPrivateKey: businesses.afipPrivateKey,
+    }).from(businesses).where(eq(businesses.id, session.user.businessId));
+
     const [customer] = order.customerId ? await db.select().from(customers).where(eq(customers.id, order.customerId)) : [null];
 
     // Combine for compatibility with existing code structure if beneficial, or just use variables
@@ -259,7 +269,11 @@ export async function createOrderAction(data: {
     revalidatePath("/dashboard");
 
     // Trigger Webhook
-    const [business] = await db.select().from(businesses).where(eq(businesses.id, session.user.businessId));
+    const [business] = await db.select({
+        id: businesses.id,
+        webhookUrl: businesses.webhookUrl,
+    }).from(businesses).where(eq(businesses.id, session.user.businessId));
+
 
     if (business?.webhookUrl) {
         await sendWebhook(business.webhookUrl, {

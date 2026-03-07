@@ -4,6 +4,8 @@ import Link from "next/link";
 import { LayoutDashboard, ShoppingCart, Users, Package, Settings, Calculator, FileText, ClipboardList, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
+import { BusinessStatusToggle } from "./business-status-toggle";
+
 
 const items = [
     { href: "/dashboard", icon: LayoutDashboard, label: "Tablero" },
@@ -53,7 +55,8 @@ export default function Sidebar({ role }: { role: string }) {
                     );
                 })}
             </nav>
-            <div className="p-6 border-t">
+            <div className="px-6 py-4 flex flex-col gap-4 border-t">
+                <BusinessStatusToggle />
                 <a
                     href="https://www.guruweb.com.ar"
                     target="_blank"

@@ -25,7 +25,11 @@ export default async function OrdersPage({
     const lowerQuery = query?.toLowerCase() || "";
 
     // Fetch business info
-    const [business] = await db.select().from(businesses).where(eq(businesses.id, session.user.businessId));
+    const [business] = await db.select({
+        id: businesses.id,
+        name: businesses.name,
+        slug: businesses.slug,
+    }).from(businesses).where(eq(businesses.id, session.user.businessId));
 
     // Fetch orders
     // Limit to 200 if search is present for better results

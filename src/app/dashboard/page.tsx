@@ -48,7 +48,12 @@ export default async function DashboardPage() {
         const orderIds = orderRows.map((r) => r.order.id);
 
         // Fetch business info
-        const [business] = await db.select().from(businesses).where(eq(businesses.id, session.user.businessId));
+        const [business] = await db.select({
+            id: businesses.id,
+            name: businesses.name,
+            slug: businesses.slug,
+            webhookUrl: businesses.webhookUrl,
+        }).from(businesses).where(eq(businesses.id, session.user.businessId));
 
         // Fetch items and products for these orders
         let allItems: any[] = [];

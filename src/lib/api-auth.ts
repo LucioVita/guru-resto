@@ -28,6 +28,7 @@ export async function verifyApiKey(key: string | null | undefined): Promise<stri
         // This is necessary because the Dashboard Settings UI currently updates this field directly.
         const businessRecord = await db.query.businesses.findFirst({
             where: eq(businesses.apiKey, key),
+            columns: { id: true }
         });
 
         if (businessRecord) {

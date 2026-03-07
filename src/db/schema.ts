@@ -22,6 +22,7 @@ export const businesses = mysqlTable("businesses", {
     afipPuntoVenta: int("afip_punto_venta"),
     afipCertificate: text("afip_certificate"),
     afipPrivateKey: text("afip_private_key"),
+    isOpen: boolean("is_open").default(true).notNull(),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
