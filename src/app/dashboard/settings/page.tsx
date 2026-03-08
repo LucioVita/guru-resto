@@ -115,6 +115,28 @@ export default async function SettingsPage() {
                                 <Input id="webhookStatusUrl" name="webhookStatusUrl" defaultValue={business.webhookStatusUrl || ""} placeholder="https://n8n.yourdomain.com/webhook/status/..." />
                             </div>
                         </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Delivery & Zones</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="deliveryZones">GeoJSON Zones (geojson.io)</Label>
+                                <textarea
+                                    id="deliveryZones"
+                                    name="deliveryZones"
+                                    defaultValue={business.deliveryZones || ""}
+                                    className="w-full min-h-[200px] flex rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    placeholder='Paste your GeoJSON from geojson.io here. Ensure features have a "price" property.'
+                                />
+                                <p className="text-[10px] text-gray-500">
+                                    Use <a href="https://geojson.io" target="_blank" className="underline">geojson.io</a> to draw your delivery zones.
+                                    Add a "price" or "cost" property to each polygon to define the shipping cost.
+                                </p>
+                            </div>
+                        </CardContent>
                         <CardFooter className="border-t pt-6">
                             <Button type="submit">Save Changes</Button>
                         </CardFooter>

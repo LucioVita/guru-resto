@@ -8,12 +8,16 @@ import { eq, and } from "drizzle-orm";
 // Webhook fijo de n8n para cambios de estado y notificaciones al cliente
 const N8N_STATUS_WEBHOOK = "https://n8n.resto.guruweb.com.ar/webhook/cambios-de-estado";
 
+import { calculateShippingCost } from "@/lib/shipping";
+
 // Schema Validation for Incoming Order
 const orderSchema = z.object({
     customer: z.object({
         name: z.string().min(1),
         phone: z.string().min(1), // Phone is critical for WhatsApp
         address: z.string().optional(),
+        lat: z.number().optional(),
+        lng: z.number().optional(),
     }),
     items: z.array(
         z.object({
@@ -27,6 +31,8 @@ const orderSchema = z.object({
     total: z.number().min(0),
     status: z.enum(["pending", "preparation", "ready", "delivered", "cancelled"]).default("pending"),
     source: z.string().optional().default("whatsapp"),
+    lat: z.number().optional(),
+    lng: z.number().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -66,13 +72,14 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const { customer, items, total, status, source } = validation.data;
+        const { customer, items, total, status, source, lat: orderLat, lng: orderLng } = validation.data;
+
+        // Coordinates can come from customer object or order root
+        const lat = orderLat ?? customer.lat;
+        const lng = orderLng ?? customer.lng;
 
         // 3. Process Order in Transaction
-        // NOTE: MySQL2 doesn't support 'transaction' function nicely with drizzle in all versions/setups 
-        // without some configuration, but typical usage:
-        // We will do sequential operations for simplicity if transaction fails or connection pool issues occur, 
-        // but ideally use db.transaction.
+        // ... (Transacción simplificada)
 
         // a. Find or Create Customer
         let customerId: string;
@@ -87,12 +94,15 @@ export async function POST(req: NextRequest) {
 
         if (existingCustomer) {
             customerId = existingCustomer.id;
-            // Optional: Update address/name if changed? Let's just update address if provided
-            if (customer.address && customer.address !== existingCustomer.address) {
-                await db.update(customers)
-                    .set({ address: customer.address, name: customer.name })
-                    .where(eq(customers.id, customerId));
-            }
+            // Update address/name and coordinates if provided
+            await db.update(customers)
+                .set({
+                    address: customer.address ?? existingCustomer.address,
+                    name: customer.name,
+                    lat: lat ? lat.toString() : existingCustomer.lat,
+                    lng: lng ? lng.toString() : existingCustomer.lng,
+                })
+                .where(eq(customers.id, customerId));
         } else {
             const newCustomerValues = {
                 id: crypto.randomUUID(),
@@ -100,9 +110,24 @@ export async function POST(req: NextRequest) {
                 name: customer.name,
                 phone: customer.phone,
                 address: customer.address || "",
+                lat: lat ? lat.toString() : null,
+                lng: lng ? lng.toString() : null,
             };
             await db.insert(customers).values(newCustomerValues);
             customerId = newCustomerValues.id;
+        }
+
+        // 3b. Calculate Shipping Cost if coordinates are present
+        let shippingCost = 0;
+        if (lat && lng) {
+            const calculated = await calculateShippingCost(businessId, lat, lng);
+            if (calculated !== null) {
+                shippingCost = calculated;
+            } else {
+                // Si está fuera de zona, podríamos manejarlo (ej. error 400), 
+                // pero por ahora dejamos shipping cost en 0 o podrías lanzar un error.
+                console.warn(`Order from ${customer.phone} is out of delivery zones.`);
+            }
         }
 
         // b. Create Order
@@ -112,7 +137,10 @@ export async function POST(req: NextRequest) {
             businessId,
             customerId,
             status: status as any, // Cast to enum
-            total: total.toString(), // Check schema type, decimal usually string in JS or number
+            total: (total + shippingCost).toString(), // Sum total + shipping
+            shippingCost: shippingCost.toString(),
+            lat: lat ? lat.toString() : null,
+            lng: lng ? lng.toString() : null,
             source,
             paymentMethod: 'cash', // Default or from body?
         });
@@ -155,7 +183,10 @@ export async function POST(req: NextRequest) {
                     address: orderData?.customer?.address || customer.address,
                 },
                 items: items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
-                total,
+                total: total + shippingCost,
+                shippingCost,
+                lat,
+                lng,
                 status: 'pending',
                 estimatedWaitTime: null,
                 message: 'ok, ya te digo cuanto va a demorar',

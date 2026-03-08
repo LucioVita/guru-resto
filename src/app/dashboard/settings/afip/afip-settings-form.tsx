@@ -148,13 +148,36 @@ export function AfipSettingsForm({ initialData }: { initialData: any }) {
 
             </div>
 
+            <div className="space-y-4 mb-6 pt-6 border-t border-white/5">
+                <h3 className="text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
+                    Delivery & Zones
+                </h3>
+
+                <div className="space-y-4 bg-white/10 p-6 rounded-2xl border border-white/10 italic">
+                    <div className="space-y-2">
+                        <Label htmlFor="deliveryZones" className="font-bold">GeoJSON Zones (geojson.io)</Label>
+                        <Textarea
+                            id="deliveryZones"
+                            name="deliveryZones"
+                            className="bg-black/20 border-white/10 min-h-[150px] text-xs font-mono"
+                            defaultValue={initialData?.deliveryZones || ""}
+                            placeholder='Paste your GeoJSON from geojson.io here. Ensure features have a "price" property.'
+                        />
+                        <p className="text-[10px] text-gray-400 not-italic">
+                            Use <a href="https://geojson.io" target="_blank" className="underline text-primary hover:text-primary/80">geojson.io</a> to draw your delivery zones.
+                            Add a "price" or "cost" property to each polygon to define the shipping cost.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <Button
                 type="submit"
-                className="w-full h-12 text-lg font-bold gap-2 shadow-xl shadow-primary/20"
+                className="w-full h-14 text-lg font-black uppercase tracking-widest gap-3 shadow-2xl shadow-primary/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
                 disabled={loading}
             >
-                {loading ? <Loader2 className="animate-spin" /> : <Save />}
-                Guardar Configuración Fiscal
+                {loading ? <Loader2 className="animate-spin" /> : <Save className="h-5 w-5" />}
+                Save Changes
             </Button>
         </form>
     );
