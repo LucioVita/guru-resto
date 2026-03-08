@@ -61,7 +61,7 @@ async function getCajaStartTime(businessId: string, openingTimeParam: Date | str
     if (previousCaja && previousCaja.closingTime) {
         return new Date(previousCaja.closingTime);
     }
-    
+
     // Fallback if no previous caja found for this business
     const today = new Date(openingTime);
     today.setHours(0, 0, 0, 0);
@@ -70,79 +70,80 @@ async function getCajaStartTime(businessId: string, openingTimeParam: Date | str
 
 
 function generateCSV(orders: any[], items: any[], openingTime: Date, closingTime: Date, initialAmount: string, finalAmount: string): string {
-    const headers = [
-        'Fecha Pedido',
-        'ID Pedido',
-        'Cliente',
-        'Total',
-        'Método de Pago',
-        'Estado',
-        'Factura CAE',
-        'Número Factura'
-    ];
+    // 1. DATA PREPARATION
+    const validOrdersForRecap = orders.filter(o => o.status !== 'cancelled');
+    const totalSales = validOrdersForRecap.reduce((sum, order) => sum + parseFloat(order.total), 0);
 
-    const rows = orders.map(order => [
-        new Date(order.createdAt).toLocaleString('es-AR'),
-        order.id.slice(-8),
-        order.customer?.name || 'Sin nombre',
-        `${Math.round(parseFloat(order.total))}`,
-        order.paymentMethod === 'cash' ? 'Efectivo' : order.paymentMethod === 'card' ? 'Tarjeta' : 'Transferencia',
-        order.status === 'delivered' ? 'Entregado' : order.status === 'cancelled' ? 'Cancelado' : 'Pendiente',
-        order.afipCae || 'N/A',
-        order.afipInvoiceNumber || 'N/A'
-    ]);
-
-    // Summaries
-    const validOrders = orders.filter(o => o.status !== 'cancelled');
-    const totalSales = validOrders.reduce((sum, order) => sum + parseFloat(order.total), 0);
-
-    // Paymethod Methods Summary
-    const byPayment: Record<string, number> = {};
-    validOrders.forEach(o => {
-        const method = o.paymentMethod || 'other';
+    const byPayment: Record<string, number> = { cash: 0, transfer: 0, card: 0 };
+    validOrdersForRecap.forEach(o => {
+        const method = o.paymentMethod || 'cash';
         byPayment[method] = (byPayment[method] || 0) + parseFloat(o.total);
     });
 
-    // Product Summary
     const byProduct: Record<string, { qty: number; total: number }> = {};
     items.forEach(i => {
-        const name = i.name || 'Producto Desconocido';
-        if (!byProduct[name]) byProduct[name] = { qty: 0, total: 0 };
-        byProduct[name].qty += i.quantity;
-        byProduct[name].total += parseFloat(i.price) * i.quantity;
+        const order = orders.find(o => o.id === i.orderId);
+        if (order && order.status !== 'cancelled') {
+            const name = i.name || 'Producto Desconocido';
+            if (!byProduct[name]) byProduct[name] = { qty: 0, total: 0 };
+            byProduct[name].qty += i.quantity;
+            byProduct[name].total += parseFloat(i.price) * i.quantity;
+        }
     });
 
-    rows.push([]);
-    rows.push(['RESUMEN DE CAJA', '', '', '', '', '', '', '']);
-    rows.push(['Apertura', new Date(openingTime).toLocaleString('es-AR'), '', '', '', '', '', '']);
-    rows.push(['Cierre', new Date(closingTime).toLocaleString('es-AR'), '', '', '', '', '', '']);
-    rows.push(['Monto Inicial', `$${Math.round(parseFloat(initialAmount))}`, '', '', '', '', '', '']);
-    rows.push(['Total Ventas', `$${Math.round(totalSales)}`, '', '', '', '', '', '']);
-    rows.push(['Monto Final Esperado', `$${Math.round(parseFloat(initialAmount) + totalSales)}`, '', '', '', '', '', '']);
-    rows.push(['Monto Final Real', `$${Math.round(parseFloat(finalAmount))}`, '', '', '', '', '', '']);
-    rows.push(['Diferencia', `$${Math.round(parseFloat(finalAmount) - (parseFloat(initialAmount) + totalSales))}`, '', '', '', '', '', '']);
+    const reportRows: any[][] = [];
 
-    rows.push([]);
-    rows.push(['VENTAS POR MÉTODO DE PAGO', '', '', '', '', '', '', '']);
-    Object.entries(byPayment).forEach(([method, total]) => {
-        const label = method === 'cash' ? 'Efectivo' : method === 'card' ? 'Tarjeta' : method === 'transfer' ? 'Transferencia' : method;
-        rows.push([label, `$${Math.round(total)}`, '', '', '', '', '', '']);
-    });
+    // Title & Header
+    reportRows.push(['REPORTE DE CIERRE DE CAJA - RESUMEN DE VENTAS']);
+    reportRows.push(['Fecha Emision', new Date().toLocaleString('es-AR')]);
+    reportRows.push(['Periodo de Caja', `${new Date(openingTime).toLocaleString('es-AR')} hasta ${new Date(closingTime).toLocaleString('es-AR')}`]);
+    reportRows.push([]);
 
-    rows.push([]);
-    rows.push(['VENTAS POR PRODUCTO', 'Cantidad', 'Total', '', '', '', '', '']);
+    // 2. VENTAS POR MÉTODO (Requested by owner)
+    reportRows.push(['TOTALE VENDIDO POR MÉTODO DE PAGO']);
+    reportRows.push(['Metodo', 'Total']);
+    reportRows.push(['Efectivo', Math.round(byPayment['cash'] || 0)]);
+    reportRows.push(['Transferencia', Math.round(byPayment['transfer'] || 0)]);
+    reportRows.push(['Tarjeta', Math.round(byPayment['card'] || 0)]);
+    reportRows.push(['TOTAL VENTAS BRUTAS', Math.round(totalSales)]);
+    reportRows.push([]);
+
+    // 3. ARQUEO DE CAJA
+    reportRows.push(['ARQUEO DE CAJA (CONTROL DE EFECTIVO)']);
+    reportRows.push(['Monto Inicial', Math.round(parseFloat(initialAmount))]);
+    reportRows.push(['Ventas en Efectivo (+)', Math.round(byPayment['cash'] || 0)]);
+    reportRows.push(['Total Esperado en Caja', Math.round(parseFloat(initialAmount) + (byPayment['cash'] || 0))]);
+    reportRows.push(['Total Real Declarado', Math.round(parseFloat(finalAmount))]);
+    const diff = parseFloat(finalAmount) - (parseFloat(initialAmount) + (byPayment['cash'] || 0));
+    reportRows.push(['Diferencia', Math.round(diff)]);
+    reportRows.push([]);
+
+    // 4. RANKING DE PRODUCTOS (For Stock calculation)
+    reportRows.push(['RANKING DE PRODUCTOS VENDIDOS (PARA STOCK)']);
+    reportRows.push(['Producto', 'Cantidad Vendida', 'Recaudacion Estimada']);
     Object.entries(byProduct)
-        .sort((a, b) => b[1].total - a[1].total)
+        .sort((a, b) => b[1].qty - a[1].qty) // Ranking by quantity
         .forEach(([name, data]) => {
-            rows.push([name, data.qty.toString(), `$${Math.round(data.total)}`, '', '', '', '', '']);
+            reportRows.push([name, data.qty, Math.round(data.total)]);
         });
+    reportRows.push([]);
 
-    const csvContent = [
-        headers.join(','),
-        ...rows.map(row => row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(','))
-    ].join('\n');
+    // 5. DETALLE SIMPLIFICADO DE PEDIDOS
+    reportRows.push(['DETALLE DE PEDIDOS']);
+    reportRows.push(['ID', 'Cliente', 'Monto', 'Metodo', 'Estado']);
+    validOrdersForRecap.forEach(o => {
+        reportRows.push([
+            o.id.slice(-8),
+            o.customer?.name || 'Mostrador',
+            Math.round(parseFloat(o.total)),
+            o.paymentMethod === 'cash' ? 'Efectivo' : o.paymentMethod === 'transfer' ? 'Transferencia' : 'Tarjeta',
+            o.status === 'delivered' ? 'Entregado' : o.status === 'ready' ? 'Listo' : 'Pendiente'
+        ]);
+    });
 
-    return csvContent;
+    return reportRows
+        .map(row => row.map(cell => `"${(cell ?? '').toString().replace(/"/g, '""')}"`).join(','))
+        .join('\n');
 }
 
 export async function closeCajaAction(data: { actualAmount: string; notes?: string }) {
@@ -170,14 +171,14 @@ export async function closeCajaAction(data: { actualAmount: string; notes?: stri
         order: orders,
         customer: customers
     })
-    .from(orders)
-    .leftJoin(customers, eq(orders.customerId, customers.id))
-    .where(
-        and(
-            eq(orders.businessId, session.user.businessId),
-            gte(orders.createdAt, startTime)
-        )
-    );
+        .from(orders)
+        .leftJoin(customers, eq(orders.customerId, customers.id))
+        .where(
+            and(
+                eq(orders.businessId, session.user.businessId),
+                gte(orders.createdAt, startTime)
+            )
+        );
 
     const dailyOrders = dailyOrdersResult.map(r => ({
         ...r.order,
@@ -236,7 +237,7 @@ export async function getOpenCaja() {
                 )
             )
             .limit(1);
-        
+
         return result[0] || null;
     } catch (error) {
         console.error("Error in getOpenCaja:", error);
@@ -290,15 +291,15 @@ export async function getCSVReportAction(cajaId: string) {
         order: orders,
         customer: customers
     })
-    .from(orders)
-    .leftJoin(customers, eq(orders.customerId, customers.id))
-    .where(
-        and(
-            eq(orders.businessId, session.user.businessId),
-            gte(orders.createdAt, startTime),
-            lt(orders.createdAt, endTime)
-        )
-    );
+        .from(orders)
+        .leftJoin(customers, eq(orders.customerId, customers.id))
+        .where(
+            and(
+                eq(orders.businessId, session.user.businessId),
+                gte(orders.createdAt, startTime),
+                lt(orders.createdAt, endTime)
+            )
+        );
 
     const filteredOrders = filteredOrdersResult.map(r => ({
         ...r.order,
@@ -349,14 +350,14 @@ export async function getCashRegisterOrders() {
         order: orders,
         customer: customers
     })
-    .from(orders)
-    .leftJoin(customers, eq(orders.customerId, customers.id))
-    .where(
-        and(
-            eq(orders.businessId, session.user.businessId),
-            gte(orders.createdAt, startTime)
-        )
-    );
+        .from(orders)
+        .leftJoin(customers, eq(orders.customerId, customers.id))
+        .where(
+            and(
+                eq(orders.businessId, session.user.businessId),
+                gte(orders.createdAt, startTime)
+            )
+        );
 
     return ordersResult.map(r => ({
         ...r.order,
