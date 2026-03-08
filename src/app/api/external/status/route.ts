@@ -15,13 +15,15 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const business = await db.query.businesses.findFirst({
-            where: eq(businesses.id, businessId),
-            columns: {
-                name: true,
-                isOpen: true,
-            }
-        });
+        const businessResult = await db.select({
+            name: businesses.name,
+            isOpen: businesses.isOpen,
+        })
+        .from(businesses)
+        .where(eq(businesses.id, businessId))
+        .limit(1);
+
+        const business = businessResult[0];
 
         if (!business) {
             return NextResponse.json({ error: "Business not found" }, { status: 404 });

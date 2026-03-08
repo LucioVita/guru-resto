@@ -15,28 +15,27 @@ export async function verifyApiKey(key: string | null | undefined): Promise<stri
 
     try {
         // 1. Check dedicated api_keys table
-        // This allows for multiple keys, active/inactive status, etc.
-        const apiKeyRecord = await db.query.apiKeys.findFirst({
-            where: and(eq(apiKeys.key, key), eq(apiKeys.isActive, true)),
-        });
+        const apiKeyResult = await db.select()
+            .from(apiKeys)
+            .where(and(eq(apiKeys.key, key), eq(apiKeys.isActive, true)))
+            .limit(1);
 
-        if (apiKeyRecord) {
-            return apiKeyRecord.businessId;
+        if (apiKeyResult.length > 0) {
+            return apiKeyResult[0].businessId;
         }
 
         // 2. Check businesses table (simple key from settings)
-        // This is necessary because the Dashboard Settings UI currently updates this field directly.
-        const businessRecord = await db.query.businesses.findFirst({
-            where: eq(businesses.apiKey, key),
-            columns: { id: true }
-        });
+        const businessResult = await db.select({ id: businesses.id })
+            .from(businesses)
+            .where(eq(businesses.apiKey, key))
+            .limit(1);
 
-        if (businessRecord) {
-            return businessRecord.id;
+        if (businessResult.length > 0) {
+            return businessResult[0].id;
         }
     } catch (error) {
         console.error("Error verifying API Key:", error);
-        return null; // Fail safe
+        return null;
     }
 
     return null;

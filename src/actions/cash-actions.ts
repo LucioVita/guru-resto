@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from "@/db";
-import { cashRegisters, orders } from "@/db/schema";
+import { cashRegisters, orders, customers } from "@/db/schema";
 import { eq, and, isNull, sum, gte, desc, inArray, lt } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
@@ -14,14 +14,17 @@ export async function openCajaAction(initialAmountRaw: string) {
     if (!session || !session.user.businessId) throw new Error("Unauthorized");
 
     // Check if there is already an open caja
-    const existing = await db.query.cashRegisters.findFirst({
-        where: and(
-            eq(cashRegisters.businessId, session.user.businessId),
-            eq(cashRegisters.status, "open")
-        ),
-    });
+    const existingResult = await db.select()
+        .from(cashRegisters)
+        .where(
+            and(
+                eq(cashRegisters.businessId, session.user.businessId),
+                eq(cashRegisters.status, "open")
+            )
+        )
+        .limit(1);
 
-    if (existing) throw new Error("There is already an open cash register");
+    if (existingResult.length > 0) throw new Error("There is already an open cash register");
 
     const now = new Date();
     console.log(`[Caja] Abriendo caja para business ${session.user.businessId} con monto ${initialAmount} a las ${now.toISOString()}`);
@@ -41,14 +44,19 @@ async function getCajaStartTime(businessId: string, openingTimeParam: Date | str
     if (!openingTimeParam) return new Date();
     const openingTime = new Date(openingTimeParam);
 
-    const previousCaja = await db.query.cashRegisters.findFirst({
-        where: and(
-            eq(cashRegisters.businessId, businessId),
-            eq(cashRegisters.status, "closed"),
-            lt(cashRegisters.closingTime, openingTime)
-        ),
-        orderBy: [desc(cashRegisters.closingTime)]
-    });
+    const previousCajaResult = await db.select()
+        .from(cashRegisters)
+        .where(
+            and(
+                eq(cashRegisters.businessId, businessId),
+                eq(cashRegisters.status, "closed"),
+                lt(cashRegisters.closingTime, openingTime)
+            )
+        )
+        .orderBy(desc(cashRegisters.closingTime))
+        .limit(1);
+
+    const previousCaja = previousCajaResult[0];
 
     if (previousCaja && previousCaja.closingTime) {
         return new Date(previousCaja.closingTime);
@@ -141,27 +149,40 @@ export async function closeCajaAction(data: { actualAmount: string; notes?: stri
     const session = await auth();
     if (!session || !session.user.businessId) throw new Error("Unauthorized");
 
-    const openCaja = await db.query.cashRegisters.findFirst({
-        where: and(
-            eq(cashRegisters.businessId, session.user.businessId),
-            eq(cashRegisters.status, "open")
-        ),
-    });
+    const openCajaResult = await db.select()
+        .from(cashRegisters)
+        .where(
+            and(
+                eq(cashRegisters.businessId, session.user.businessId),
+                eq(cashRegisters.status, "open")
+            )
+        )
+        .limit(1);
+
+    const openCaja = openCajaResult[0];
 
     if (!openCaja) throw new Error("No open cash register found");
 
     const startTime = await getCajaStartTime(session.user.businessId, openCaja.openingTime);
 
     // Get all orders since opening
-    const dailyOrders = await db.query.orders.findMany({
-        where: and(
+    const dailyOrdersResult = await db.select({
+        order: orders,
+        customer: customers
+    })
+    .from(orders)
+    .leftJoin(customers, eq(orders.customerId, customers.id))
+    .where(
+        and(
             eq(orders.businessId, session.user.businessId),
             gte(orders.createdAt, startTime)
-        ),
-        with: {
-            customer: true,
-        },
-    });
+        )
+    );
+
+    const dailyOrders = dailyOrdersResult.map(r => ({
+        ...r.order,
+        customer: r.customer
+    }));
 
     // Get items for these orders
     let dailyItems: any[] = [];
@@ -202,26 +223,41 @@ export async function closeCajaAction(data: { actualAmount: string; notes?: stri
 }
 
 export async function getOpenCaja() {
-    const session = await auth();
-    if (!session || !session.user.businessId) return null;
+    try {
+        const session = await auth();
+        if (!session || !session.user.businessId) return null;
 
-    return db.query.cashRegisters.findFirst({
-        where: and(
-            eq(cashRegisters.businessId, session.user.businessId),
-            eq(cashRegisters.status, "open")
-        ),
-    });
+        const result = await db.select()
+            .from(cashRegisters)
+            .where(
+                and(
+                    eq(cashRegisters.businessId, session.user.businessId),
+                    eq(cashRegisters.status, "open")
+                )
+            )
+            .limit(1);
+        
+        return result[0] || null;
+    } catch (error) {
+        console.error("Error in getOpenCaja:", error);
+        return null;
+    }
 }
 
 export async function getCajaHistory() {
-    const session = await auth();
-    if (!session || !session.user.businessId) return [];
+    try {
+        const session = await auth();
+        if (!session || !session.user.businessId) return [];
 
-    return db.query.cashRegisters.findMany({
-        where: eq(cashRegisters.businessId, session.user.businessId),
-        orderBy: [desc(cashRegisters.openingTime)],
-        limit: 20
-    });
+        return await db.select()
+            .from(cashRegisters)
+            .where(eq(cashRegisters.businessId, session.user.businessId))
+            .orderBy(desc(cashRegisters.openingTime))
+            .limit(20);
+    } catch (error) {
+        console.error("Error in getCajaHistory:", error);
+        return [];
+    }
 }
 
 export async function downloadCajaReportAction(cajaId: string) {
@@ -232,12 +268,17 @@ export async function getCSVReportAction(cajaId: string) {
     const session = await auth();
     if (!session || !session.user.businessId) throw new Error("Unauthorized");
 
-    const caja = await db.query.cashRegisters.findFirst({
-        where: and(
-            eq(cashRegisters.id, cajaId),
-            eq(cashRegisters.businessId, session.user.businessId)
-        ),
-    });
+    const cajaResult = await db.select()
+        .from(cashRegisters)
+        .where(
+            and(
+                eq(cashRegisters.id, cajaId),
+                eq(cashRegisters.businessId, session.user.businessId)
+            )
+        )
+        .limit(1);
+
+    const caja = cajaResult[0];
 
     if (!caja) throw new Error("Caja session not found");
 
@@ -245,20 +286,24 @@ export async function getCSVReportAction(cajaId: string) {
     const endTime = caja.closingTime || new Date();
 
     // Fetch accurate orders for that period
-    const sessionOrders = await db.query.orders.findMany({
-        where: and(
+    const filteredOrdersResult = await db.select({
+        order: orders,
+        customer: customers
+    })
+    .from(orders)
+    .leftJoin(customers, eq(orders.customerId, customers.id))
+    .where(
+        and(
             eq(orders.businessId, session.user.businessId),
-            gte(orders.createdAt, startTime)
-        ),
-        with: { customer: true },
-    });
-
-    // Filtering precisely by time range
-    const filteredOrders = sessionOrders.filter(o =>
-        o.createdAt &&
-        o.createdAt >= startTime &&
-        o.createdAt <= endTime
+            gte(orders.createdAt, startTime),
+            lt(orders.createdAt, endTime)
+        )
     );
+
+    const filteredOrders = filteredOrdersResult.map(r => ({
+        ...r.order,
+        customer: r.customer
+    }));
 
     let sessionItems: any[] = [];
     if (filteredOrders.length > 0) {
@@ -284,25 +329,38 @@ export async function getCashRegisterOrders() {
     const session = await auth();
     if (!session || !session.user.businessId) return [];
 
-    const openCaja = await db.query.cashRegisters.findFirst({
-        where: and(
-            eq(cashRegisters.businessId, session.user.businessId),
-            eq(cashRegisters.status, "open")
-        ),
-    });
+    const openCajaResult = await db.select()
+        .from(cashRegisters)
+        .where(
+            and(
+                eq(cashRegisters.businessId, session.user.businessId),
+                eq(cashRegisters.status, "open")
+            )
+        )
+        .limit(1);
+
+    const openCaja = openCajaResult[0];
 
     if (!openCaja) return [];
 
     const startTime = await getCajaStartTime(session.user.businessId, openCaja.openingTime);
 
-    return db.query.orders.findMany({
-        where: and(
+    const ordersResult = await db.select({
+        order: orders,
+        customer: customers
+    })
+    .from(orders)
+    .leftJoin(customers, eq(orders.customerId, customers.id))
+    .where(
+        and(
             eq(orders.businessId, session.user.businessId),
             gte(orders.createdAt, startTime)
-        ),
-        with: {
-            customer: true,
-        },
-    });
+        )
+    );
+
+    return ordersResult.map(r => ({
+        ...r.order,
+        customer: r.customer
+    }));
 }
 

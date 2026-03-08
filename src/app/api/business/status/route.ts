@@ -13,12 +13,14 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        const business = await db.query.businesses.findFirst({
-            where: eq(businesses.id, session.user.businessId),
-            columns: {
-                isOpen: true,
-            }
-        });
+        const businessResult = await db.select({
+            isOpen: businesses.isOpen,
+        })
+        .from(businesses)
+        .where(eq(businesses.id, session.user.businessId))
+        .limit(1);
+
+        const business = businessResult[0];
 
         return NextResponse.json({ isOpen: business?.isOpen ?? true });
     } catch (error) {
